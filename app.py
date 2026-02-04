@@ -85,21 +85,23 @@ def get_data(user_tickers, period):
     returns = df_close.pct_change().dropna()
     return df_close, returns
 
-# --- AI 分析函数 ---
+# --- AI 分析函数 (直接硬编码 Key) ---
 def get_deepseek_analysis(metrics_df, period):
     """
     Calls DeepSeek API to analyze metrics, strictly in English.
     """
-    try:
-        api_key = st.secrets["DEEPSEEK_API_KEY"]
-    except:
-        return "Error: API Key not found. Please configure secrets.toml."
+    # 👇 直接在这里写死 Key，不再读取 secrets.toml
+    api_key = "sk-94393b595210452cbe406e7301a0c410" 
+    
+    # 确保 BASE_URL 在文件顶部已经定义，如果没有，这里也可以写死
+    base_url = "https://api.deepseek.com"
 
-    client = OpenAI(api_key=api_key, base_url=BASE_URL)
+    client = OpenAI(api_key=api_key, base_url=base_url)
     
     # Data context
     data_csv = metrics_df.to_csv(index=False)
     
+    # System Prompt (English - Professional Analyst)
     system_prompt = """
     You are a top-tier Wall Street Biotech Equity Research Analyst. 
     You are presenting to a portfolio manager.
@@ -139,7 +141,7 @@ def get_deepseek_analysis(metrics_df, period):
                 {"role": "user", "content": user_prompt},
             ],
             stream=True,
-            temperature=0.5 # 稍微降低温度，让回答更严谨
+            temperature=0.5
         )
         return response
     except Exception as e:
@@ -284,6 +286,7 @@ else:
         *   **🤖 AI Insights**: DeepSeek-V3 generates instant reports.
             *(DeepSeek 智能生成投资研报)*
         """)
+
 
 
 
