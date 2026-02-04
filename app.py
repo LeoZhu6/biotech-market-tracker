@@ -5,7 +5,6 @@ import plotly.express as px
 from openai import OpenAI
 
 # --- 配置区域 ---
-# ⚠️ 注意：在生产环境中，建议将 Key 放入 st.secrets，不要直接写在代码里
 DEEPSEEK_API_KEY = "sk-94393b595210452cbe406e7301a0c410"
 BASE_URL = "https://api.deepseek.com"
 
@@ -39,14 +38,15 @@ with st.sidebar:
     if 'SPY' in available_tickers: 
         available_tickers.remove('SPY')
         
-    default_selection = ['XBI', 'IBB', 'MRNA', 'PFE', 'VRTX']
     
     tickers = st.multiselect(
         "Select Tickers (选择股票/ETF)", 
         options=available_tickers,
-        default=default_selection,
-        format_func=lambda x: TICKER_MAP.get(x, x)
+        default=[], 
+        format_func=lambda x: TICKER_MAP.get(x, x),
+        placeholder="Choose stocks to analyze... (请选择股票)" 
     )
+
     
     time_range = st.selectbox(
         "Time Range (时间范围)", 
@@ -242,4 +242,30 @@ if len(tickers) > 0:
             st.error(f"An error occurred: {e}")
             st.warning("Please refresh the page. (请刷新页面)")
 else:
-    st.info("👈 Please select tickers from the sidebar to begin. (请在左侧选择股票代码)")
+    # 当用户没选股票时，显示一个漂亮的欢迎页
+    st.markdown("---")
+    
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.info("👈 **Start Here (从左侧开始)**")
+        st.markdown("""
+        **How to use:**
+        1. Go to the **Sidebar** on the left.
+        2. Select **Tickers** (e.g., XBI, MRNA).
+        3. Choose a **Time Range**.
+        4. The AI Analyst will stand by.
+        """)
+    
+    with col2:
+        st.success("✨ **Features (功能亮点)**")
+        st.markdown("""
+        *   **📈 Real-time Alpha**: Compare stocks vs. S&P 500.
+            *(实时超额收益分析)*
+        *   **⚖️ Risk Quadrant**: Visualize Risk vs. Reward.
+            *(风险-回报象限图)*
+        *   **🤖 AI Insights**: DeepSeek-V3 generates instant reports.
+            *(DeepSeek 智能生成投资研报)*
+        """)
+
+
