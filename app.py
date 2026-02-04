@@ -88,33 +88,48 @@ def get_data(user_tickers, period):
 # --- AI 分析函数 ---
 def get_deepseek_analysis(metrics_df, period):
     """
-    调用 DeepSeek API 分析计算好的指标数据
+    Calls DeepSeek API to analyze metrics, strictly in English.
     """
-    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
+    try:
+        api_key = st.secrets["DEEPSEEK_API_KEY"]
+    except:
+        return "Error: API Key not found. Please configure secrets.toml."
+
+    client = OpenAI(api_key=api_key, base_url=BASE_URL)
     
-    # 将数据转为 CSV 文本，方便 AI 理解
+    # Data context
     data_csv = metrics_df.to_csv(index=False)
     
     system_prompt = """
-    你是一位资深的生物医药行业投资分析师。用户会提供一份股票表现数据表（包含回报率、波动率、Beta系数）。
+    You are a top-tier Wall Street Biotech Equity Research Analyst. 
+    You are presenting to a portfolio manager.
     
-    请基于数据，用通俗、专业且带有一点幽默感的口吻，生成一份简报。
+    The user will provide a dataset of stock performance metrics (Total Return, Volatility, Beta).
     
-    请包含以下三个部分（使用Markdown格式）：
-    1. 📊 **板块风向标**：根据整体回报率和Beta，判断当前生物医药板块是处于"进攻模式"还是"防御模式"。
-    2. 🏆 **红黑榜**：
-       - 点评表现最好的"明星股"（高回报）。
-       - 警示"高危股"（高波动、低/负回报）。
-       - 识别"防御股"（低Beta）。
-    3. 💡 **操作建议**：给激进型和稳健型投资者各一句话建议。
+    Your task is to generate a **concise, professional investment memo** in ENGLISH.
     
-    注意：
-    - 直接分析数据，不要说废话。
-    - 重点关注 Beta 值与波动率的关系。
-    - 适当使用 Emoji。
+    Please structure your response in Markdown:
+    
+    ### 1. 🧭 Sector Sentiment & Market Pulse
+    - Analyze the overall mood. Is the biotech sector currently "Risk-On" (High Beta/High Return) or "Risk-Off"?
+    - How does it compare to the broader market (SPY)?
+    
+    ### 2. 🎯 Alpha Drivers & Risk Factors
+    - Identify the **"Top Picks"**: Stocks with the best risk-adjusted returns.
+    - Flag the **"Underperformers"**: High volatility with negative returns (Capital destruction).
+    - Comment on **Beta exposure**: Which stocks are highly correlated to the market vs. idiosyncratic movers.
+    
+    ### 3. ♟️ Strategic Recommendations
+    - **For Aggressive Growth**: One actionable idea.
+    - **For Capital Preservation**: One actionable idea.
+    
+    **Style Guidelines:**
+    - Use professional financial terminology (e.g., "Alpha generation", "Drawdown", "High-beta play", "Defensive rotation").
+    - Be direct and insightful. Avoid generic fluff.
+    - Do NOT include disclaimers.
     """
     
-    user_prompt = f"分析周期: {period}。\n数据如下:\n{data_csv}"
+    user_prompt = f"Time Horizon: {period}.\nData Set:\n{data_csv}"
 
     try:
         response = client.chat.completions.create(
@@ -124,11 +139,12 @@ def get_deepseek_analysis(metrics_df, period):
                 {"role": "user", "content": user_prompt},
             ],
             stream=True,
-            temperature=0.6
+            temperature=0.5 # 稍微降低温度，让回答更严谨
         )
         return response
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 # --- 主程序逻辑 ---
 if len(tickers) > 0:
@@ -205,30 +221,30 @@ if len(tickers) > 0:
                     display_df = metrics_df[['Name', 'Total Return (%)', 'Volatility (%)', 'Beta']].set_index('Name')
                     st.dataframe(display_df.style.format("{:.2f}"), use_container_width=True)
 
-                # --- 4. AI 智能分析模块 (新增核心功能) ---
+                # --- 4. AI 智能分析模块 ---
                 st.divider()
-                st.subheader("🤖 DeepSeek AI Analyst (智能研报)")
+                st.subheader("🤖 AI Equity Research Analyst")
                 
-                st.info("点击下方按钮，让 AI 基于上述数据为您生成一份实时投资分析报告。")
+                st.info("Generate a professional investment memo based on the current metrics.")
                 
-                if st.button("✨ Generate AI Analysis (生成深度解读)", type="primary"):
-                    with st.status("🤖 AI Analyst is thinking... (AI 正在分析数据...)", expanded=True) as status:
-                        st.write("1. Reading market data... (读取市场数据)")
-                        st.write("2. Calculating risk metrics... (计算风险指标)")
-                        st.write("3. Generating insights... (生成观点)")
+                # 按钮文案改为纯英文
+                if st.button("✨ Generate Investment Memo", type="primary"):
+                    
+                    # 状态栏文案改为纯英文
+                    with st.status("🤖 AI Analyst is analyzing market data...", expanded=True) as status:
+                        st.write("1. Cranking the numbers (Beta, Volatility)...")
+                        st.write("2. Comparing against S&P 500 benchmark...")
+                        st.write("3. Drafting research note...")
                         
-                        # 创建占位符用于流式输出
                         response_placeholder = st.empty()
                         full_response = ""
                         
-                        # 调用 API
                         stream = get_deepseek_analysis(metrics_df, time_range)
                         
                         if isinstance(stream, str):
-                            status.update(label="❌ Error", state="error")
+                            status.update(label="❌ Connection Error", state="error")
                             st.error(stream)
                         else:
-                            # 流式渲染
                             for chunk in stream:
                                 if chunk.choices[0].delta.content:
                                     content = chunk.choices[0].delta.content
@@ -236,7 +252,8 @@ if len(tickers) > 0:
                                     response_placeholder.markdown(full_response + "▌")
                             
                             response_placeholder.markdown(full_response)
-                            status.update(label="✅ Analysis Complete (分析完成)", state="complete")
+                            status.update(label="✅ Research Note Ready", state="complete")
+
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
@@ -267,5 +284,6 @@ else:
         *   **🤖 AI Insights**: DeepSeek-V3 generates instant reports.
             *(DeepSeek 智能生成投资研报)*
         """)
+
 
 
