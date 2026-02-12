@@ -751,32 +751,41 @@ with col_time1:
     )
 
 with col_time2:
-    if st.button(" Refresh", use_container_width=True):
-        # ========== 关键修复：确保状态不丢失 ==========
-        # 1. 保存当前分析状态
-        if st.session_state.get('analysis_started'):
-            # 强制保留分析状态
-            st.session_state.analysis_started = True
+    if st.button(" Refresh", use_container_width=True, key="refresh_btn"):
+        # ========== 增强版：添加调试信息 ==========
         
-        # 2. 清除数据缓存（但不清除状态）
+        # 保存所有关键状态
+        states_to_preserve = {
+            'analysis_started': st.session_state.get('analysis_started', False),
+            'analysis_completed': st.session_state.get('analysis_completed', False),
+            'selected_tickers': st.session_state.get('selected_tickers', []),
+            'selected_time_range': st.session_state.get('selected_time_range', '1y'),
+            'analyzed_tickers': st.session_state.get('analyzed_tickers', []),
+            'ai_report': st.session_state.get('ai_report', ''),
+            'analysis_context': st.session_state.get('analysis_context', None)
+        }
+        
+        # 清除缓存
         st.cache_data.clear()
         
-        # 3. 更新时间戳
+        # 恢复所有状态
+        for key, value in states_to_preserve.items():
+            st.session_state[key] = value
+        
+        # 更新时间
         st.session_state.last_update = datetime.now()
         
-        # 4. 如果正在分析中，预加载数据避免闪烁
-        if (st.session_state.get('analysis_started') and 
-            st.session_state.get('selected_tickers')):
+        # 预加载数据
+        if states_to_preserve['analysis_started'] and states_to_preserve['selected_tickers']:
             try:
-                with st.spinner("🔄 Refreshing data..."):
-                    tickers = st.session_state.selected_tickers
-                    time_range = st.session_state.selected_time_range
-                    # 触发数据重新获取
-                    _ = get_data(tickers, time_range)
-            except Exception as e:
-                pass  # 静默失败，让主流程处理
+                _ = get_data(
+                    states_to_preserve['selected_tickers'], 
+                    states_to_preserve['selected_time_range']
+                )
+            except:
+                pass
         
-        # 5. 直接 rerun，不显示成功消息（避免阻塞）
+        # 立即 rerun
         st.rerun()
 
 with col_time3:
