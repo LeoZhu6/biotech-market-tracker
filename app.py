@@ -350,6 +350,11 @@ def display_chat_history():
 
 def handle_user_question(question, selected_tickers, client):
     """处理用户问题"""
+    # ========== 防止重复添加相同问题 ==========
+    if st.session_state.chat_history and \
+       st.session_state.chat_history[-1]['role'] == 'user' and \
+       st.session_state.chat_history[-1]['content'] == question:
+        return  # 如果最后一条就是这个问题，直接返回
     # 添加用户问题到历史
     st.session_state.chat_history.append({
         "role": "user",
@@ -1367,20 +1372,24 @@ if st.session_state.get('analysis_completed', False):
             # 快速提问按钮
             st.markdown("**🚀 Quick Questions:**")
             col1, col2, col3, col4 = st.columns(4)
-            
+
             quick_questions = {
-                "📊 Financial Metrics": f"Please analyze the key financial metrics of {', '.join(analyzed_tickers)} in detail.",
-                "🔬 R&D Pipeline": f"Evaluate the R&D pipeline and innovation capabilities of {', '.join(analyzed_tickers)}.",
-                "⚠️ Investment Risks": f"What are the main investment risks for {', '.join(analyzed_tickers)}?",
-                "📈 Future Trends": f"Predict the trends for {', '.join(analyzed_tickers)} in the next 6-12 months."
+            "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(analyzed_tickers)} in detail.",
+            "🔬 R&D Pipeline": f"Evaluate the R&D pipeline and clinical trials of {', '.join(analyzed_tickers)}.",
+            "⚠️ Investment Risks": f"What are the main investment risks for {', '.join(analyzed_tickers)}?",
+            "📈 Future Trends": f"Predict market trends for {', '.join(analyzed_tickers)} in next 6-12 months."
             }
-            
+
             cols = [col1, col2, col3, col4]
             for idx, (btn_text, question) in enumerate(quick_questions.items()):
                 with cols[idx]:
-                    if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                        handle_user_question(question, analyzed_tickers, chat_client)
+                    if st.button(btn_text, key=f"quick_q_{idx}", 
+            use_container_width=True):
+                        with st.spinner("🤖 AI is thinking..."):
+                            handle_user_question(question, analyzed_tickers, 
+            chat_client)
                         st.rerun()
+
             
             # 显示对话历史
             if st.session_state.chat_history:
@@ -1406,10 +1415,11 @@ if st.session_state.get('analysis_completed', False):
             # 自定义问题输入
             st.markdown("---")
             st.markdown("**✍️ Or ask your own question:**")
-            user_input = st.chat_input("e.g., Which company is best for long-term investment?")
+            user_input = st.chat_input("e.g., Which company has the strongest pipeline?")
             
             if user_input:
-                handle_user_question(user_input, analyzed_tickers, chat_client)
+                with st.spinner("🤖 AI is thinking..."):
+                    handle_user_question(user_input, analyzed_tickers, chat_client)
                 st.rerun()
             
             # 清空对话按钮
