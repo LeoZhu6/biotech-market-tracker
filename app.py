@@ -744,7 +744,7 @@ with col_time1:
     # 显示
     st.markdown(
         f'<div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95rem;">'
-        f'{market_icon} <b>{market_text}</b> | '
+        f'{market_text}</b> | '
         f' Last Update: <b>{current_time}</b> | '
         f' {current_date}'
         f'</div>',
