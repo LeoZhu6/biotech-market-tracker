@@ -45,7 +45,7 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 
 ## 🚀 Live Demo
 
-**[Try BioMarket Tracker Now →](https://your-app-url.streamlit.app)**
+**[Try BioMarket Tracker Now →](https://runze-bio-market-tracker.streamlit.app/)**
 
 ---
 
