@@ -771,7 +771,6 @@ if auto_refresh:
     time.sleep(30)
     st.rerun()
 
-st.markdown("---")
 # ====================================
 
 # ==================== 侧边栏 ====================
@@ -1467,3 +1466,4 @@ if st.session_state.get('analysis_completed', False):
     except Exception as e:
         st.error(f"Chat feature error: {str(e)}")
 # ====================================================
+
