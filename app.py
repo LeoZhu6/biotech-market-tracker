@@ -206,7 +206,6 @@ st.markdown("""
         margin: 1rem 0;
     }
     
-    /* 新增：股票标签样式 */
     .ticker-tag {
         display: inline-block;
         background: #667eea;
@@ -495,6 +494,26 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     buffer.seek(0)
     return buffer
 
+# 自定义颜色映射函数（不依赖 matplotlib）
+def color_return(val):
+    """根据回报率返回颜色"""
+    try:
+        val = float(val)
+        if val > 20:
+            return 'background-color: #4caf50; color: white; font-weight: bold'
+        elif val > 10:
+            return 'background-color: #8bc34a; color: white'
+        elif val > 0:
+            return 'background-color: #cddc39; color: black'
+        elif val > -10:
+            return 'background-color: #ffeb3b; color: black'
+        elif val > -20:
+            return 'background-color: #ff9800; color: white'
+        else:
+            return 'background-color: #f44336; color: white; font-weight: bold'
+    except:
+        return ''
+
 # ==================== 主界面 ====================
 
 # 标题
@@ -539,7 +558,6 @@ with st.sidebar:
             if invalid_tickers:
                 st.error(f"Invalid: {', '.join(invalid_tickers)}")
         
-        # 保存自定义股票到 session state
         st.session_state.custom_tickers = custom_tickers
         
         st.markdown("---")
@@ -557,20 +575,16 @@ with st.sidebar:
             key="preset_select"
         )
         
-        # 保存预设股票到 session state
         st.session_state.preset_tickers = preset_tickers
         
-        # 合并两个来源的股票（去重）
         all_tickers = list(set(st.session_state.custom_tickers + st.session_state.preset_tickers))
         st.session_state.selected_tickers = all_tickers
         
-        # 显示合并后的选择
         if all_tickers:
             st.markdown("---")
             st.markdown("**Current Selection**")
             st.info(f"Total: **{len(all_tickers)}** stocks")
             
-            # 分类显示
             if st.session_state.custom_tickers:
                 st.caption("Custom:")
                 for ticker in st.session_state.custom_tickers:
@@ -581,12 +595,10 @@ with st.sidebar:
                 for ticker in st.session_state.preset_tickers:
                     st.markdown(f'<span class="ticker-tag">{ticker}</span>', unsafe_allow_html=True)
             
-            # 保存到收藏
             if st.button("Save to Favorites", use_container_width=True):
                 st.session_state.favorite_tickers = all_tickers
                 st.success("Saved!")
             
-            # 清空选择
             if st.button("Clear All", use_container_width=True):
                 st.session_state.custom_tickers = []
                 st.session_state.preset_tickers = []
@@ -655,7 +667,6 @@ with st.sidebar:
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Load Favorites", use_container_width=True):
-                    # 将收藏的股票加载到预设选择中
                     st.session_state.preset_tickers = st.session_state.favorite_tickers
                     st.success("Loaded! Check Selection tab")
                     st.rerun()
@@ -674,11 +685,9 @@ with st.sidebar:
 
 # ==================== 主内容区 ====================
 
-# 如果有选择股票，显示选择摘要和分析按钮
 if len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_started:
     st.markdown("---")
     
-    # 选择摘要
     custom_list = ', '.join([TICKER_MAP.get(t, t) for t in st.session_state.custom_tickers]) if st.session_state.custom_tickers else "None"
     preset_list = ', '.join([TICKER_MAP.get(t, t) for t in st.session_state.preset_tickers]) if st.session_state.preset_tickers else "None"
     
@@ -694,19 +703,16 @@ if len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_
     </div>
     """, unsafe_allow_html=True)
     
-    # 分析按钮
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("Start Analysis", type="primary", use_container_width=True, key="start_analysis"):
             st.session_state.analysis_started = True
             st.rerun()
 
-# 如果已经开始分析，显示完整分析结果
 elif st.session_state.analysis_started and len(st.session_state.selected_tickers) > 0:
     tickers = st.session_state.selected_tickers
     time_range = st.session_state.selected_time_range
     
-    # 顶部控制栏
     col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
     with col1:
         if st.session_state.last_update:
@@ -732,7 +738,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
             st.session_state.last_update = datetime.now()
             
             if not prices.empty:
-                # 价格提醒检查
                 triggered = check_price_alerts(prices)
                 if triggered:
                     for alert in triggered:
@@ -743,7 +748,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                             unsafe_allow_html=True
                         )
                 
-                # === 1. 实时价格 ===
                 st.markdown('<div class="section-title">Real-Time Prices</div>', unsafe_allow_html=True)
                 
                 cols = st.columns(min(len(tickers), 4))
@@ -767,7 +771,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                 
                 st.markdown("---")
                 
-                # === 2. 价格走势 ===
                 st.markdown('<div class="section-title">Price Performance</div>', unsafe_allow_html=True)
                 st.caption(f"Normalized to 100 at start | Period: {TIME_RANGE_MAP.get(time_range, time_range)}")
                 
@@ -804,7 +807,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                 
                 st.markdown("---")
                 
-                # === 3. 技术指标 ===
                 st.markdown('<div class="section-title">Technical Analysis</div>', unsafe_allow_html=True)
                 
                 tech_ticker = st.selectbox(
@@ -824,7 +826,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        # RSI
                         fig_rsi = go.Figure()
                         fig_rsi.add_trace(go.Scatter(
                             x=rsi.index, y=rsi, 
@@ -857,7 +858,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                             st.caption("Normal trading range")
                     
                     with col2:
-                        # MACD
                         fig_macd = go.Figure()
                         fig_macd.add_trace(go.Scatter(
                             x=macd.index, y=macd, 
@@ -892,7 +892,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                             st.markdown('<span class="status-badge status-bearish">Bearish Signal</span>', unsafe_allow_html=True)
                             st.caption("MACD crossed below signal line")
                     
-                    # 布林带
                     fig_bb = go.Figure()
                     fig_bb.add_trace(go.Scatter(
                         x=ticker_prices.index, y=ticker_prices, 
@@ -929,7 +928,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                 
                 st.markdown("---")
                 
-                # === 4. 风险回报 ===
                 st.markdown('<div class="section-title">Risk-Return Analysis</div>', unsafe_allow_html=True)
                 
                 summary = []
@@ -961,7 +959,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    # 修复：使用绝对值确保 size 为正数
                     metrics_df['Marker Size'] = np.abs(metrics_df['Sharpe Ratio']) * 10 + 5
                     
                     fig_scat = px.scatter(
@@ -1008,18 +1005,20 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                     display_df.columns = ['Name', 'Return(%)', 'Vol(%)', 'Beta', 'Sharpe']
                     display_df = display_df.set_index('Name')
                     
+                    # 使用自定义颜色函数（不依赖 matplotlib）
+                    styled_df = display_df.style.format("{:.2f}").applymap(
+                        color_return, 
+                        subset=['Return(%)']
+                    )
+                    
                     st.dataframe(
-                        display_df.style.format("{:.2f}").background_gradient(
-                            subset=['Return(%)'], 
-                            cmap='RdYlGn'
-                        ),
+                        styled_df,
                         use_container_width=True,
                         height=400
                     )
                 
                 st.markdown("---")
                 
-                # === 5. AI 分析 ===
                 st.markdown('<div class="section-title">AI Investment Analysis</div>', unsafe_allow_html=True)
                 
                 col1, col2 = st.columns([3, 1])
@@ -1060,7 +1059,6 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
                     
                     st.markdown("---")
                     
-                    # === 6. 导出 ===
                     st.markdown('<div class="section-title">Export Options</div>', unsafe_allow_html=True)
                     
                     col1, col2, col3 = st.columns(3)
@@ -1101,13 +1099,11 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
             st.error(f"Error: {e}")
             st.warning("Please try refreshing the page")
             
-        # 自动刷新
         if st.session_state.auto_refresh:
             time.sleep(30)
             st.rerun()
 
 else:
-    # === 欢迎页 ===
     st.markdown("---")
     
     col1, col2, col3 = st.columns([1, 2, 1])
