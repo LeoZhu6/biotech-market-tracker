@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -224,7 +228,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 配置 ---
-DEEPSEEK_API_KEY = "sk-94393b595210452cbe406e7301a0c410"
 BASE_URL = "https://api.deepseek.com"
 
 # --- 映射表 ---
@@ -1150,3 +1153,4 @@ else:
             </p>
         </div>
         """, unsafe_allow_html=True)
+
