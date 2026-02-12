@@ -751,13 +751,13 @@ with col_time1:
     )
 
 with col_time2:
-    if st.button("Refresh"):
+    if st.button(" Refresh"):
         st.cache_data.clear()
         st.session_state.last_update = datetime.now()
         st.rerun()
 
 with col_time3:
-    if st.button("✨ New Analysis"):
+    if st.button(" New Analysis"):
         st.session_state.analysis_completed = False
         st.session_state.analyzed_tickers = []
         st.session_state.chat_history = []
