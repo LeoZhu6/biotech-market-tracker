@@ -752,8 +752,17 @@ with col_time1:
 
 with col_time2:
     if st.button(" Refresh", use_container_width=True):
-        st.cache_data.clear()
+        if 'get_data' in dir(st.cache_data):
+            st.cache_data.clear()
+        
         st.session_state.last_update = datetime.now()
+        
+        if 'cache_buster' not in st.session_state:
+            st.session_state.cache_buster = 0
+        st.session_state.cache_buster += 1
+        
+        st.success("Data refreshed!")
+        time.sleep(0.5) 
         st.rerun()
 
 with col_time3:
