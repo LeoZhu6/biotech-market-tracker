@@ -26,6 +26,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# --- 初始化 Session State（新增）---
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+if 'analysis_context' not in st.session_state:
+    st.session_state.analysis_context = None
+if 'show_chat' not in st.session_state:
+    st.session_state.show_chat = False
+if 'last_analysis' not in st.session_state:
+    st.session_state.last_analysis = None
 
 # --- 自定义 CSS 样式 ---
 st.markdown("""
@@ -224,6 +233,56 @@ st.markdown("""
     .ticker-tag.custom {
         background: #43a047;
     }
+    /* ========== 新增：对话界面样式 ========== */
+    .chat-container {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .chat-message {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .chat-message.user {
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        border-left: 3px solid #667eea;
+    }
+    
+    .chat-message.assistant {
+        background: white;
+        border-left: 3px solid #43a047;
+    }
+    
+    .chat-header {
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .quick-question-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0.3rem;
+    }
+    
+    .chat-divider {
+        border-top: 2px dashed #e0e0e0;
+        margin: 1.5rem 0;
+    }
+    /* ========================================= */
 </style>
 """, unsafe_allow_html=True)
 
@@ -245,6 +304,132 @@ TICKER_MAP = {
     'NVO': 'NVO (诺和诺德)'
 }
 
+# ========== 新增：对话处理函数 ==========
+def get_ai_response(messages, client):
+    """调用 DeepSeek API 获取回答"""
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2000
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"❌ 获取回答时出错: {str(e)}"
+
+def display_chat_history():
+    """显示对话历史"""
+    if st.session_state.chat_history:
+        st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
+        st.markdown("### 💬 对话历史")
+        
+        for msg in st.session_state.chat_history:
+            if msg['role'] == 'user':
+                st.markdown(f'''
+                <div class="chat-message user">
+                    <div class="chat-header">👤 你的问题</div>
+                    <div>{msg['content']}</div>
+                </div>
+                ''', unsafe_allow_html=True)
+            else:
+                st.markdown(f'''
+                <div class="chat-message assistant">
+                    <div class="chat-header">🤖 AI 回答</div>
+                    <div>{msg['content']}</div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+def handle_user_question(question, selected_tickers, client):
+    """处理用户问题"""
+    # 添加用户问题到历史
+    st.session_state.chat_history.append({
+        "role": "user",
+        "content": question
+    })
+    
+    # 准备上下文消息
+    messages = [
+        {
+            "role": "system",
+            "content": f"""你是一位专业的生物医药行业投资分析师。
+当前正在分析以下股票: {', '.join(selected_tickers)}
+请基于之前的分析报告和最新数据，回答用户的问题。
+用中文回答，保持专业、客观、有洞察力。"""
+        }
+    ]
+    
+    # 添加分析上下文（如果有）
+    if st.session_state.analysis_context:
+        messages.append({
+            "role": "assistant",
+            "content": f"之前的分析摘要：{st.session_state.analysis_context[:1000]}..."
+        })
+    
+    # 添加最近的对话历史（最多5轮）
+    recent_history = st.session_state.chat_history[-6:]
+    for msg in recent_history:
+        messages.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+    
+    # 获取 AI 回答
+    with st.spinner("🤔 AI 正在思考..."):
+        answer = get_ai_response(messages, client)
+    
+    # 添加 AI 回答到历史
+    st.session_state.chat_history.append({
+        "role": "assistant",
+        "content": answer
+    })
+
+def add_chat_interface(selected_tickers, client):
+    """添加对话界面"""
+    st.markdown("---")
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    st.markdown("### 💬 继续追问 AI 分析师")
+    
+    # 快速提问按钮
+    st.markdown("**🚀 快速提问：**")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    quick_questions = {
+        "📊 详细解释财务指标": "请详细解释这些公司的主要财务指标，包括市盈率、市净率、ROE等的含义和投资意义。",
+        "🔬 分析研发管线": "请分析这些公司的研发管线和在研药物情况，哪些最有潜力？",
+        "⚠️ 评估投资风险": "这些公司的主要投资风险有哪些？市场、监管、竞争等方面？",
+        "📈 预测未来趋势": "基于当前数据，预测这些公司未来6-12个月的发展趋势。"
+    }
+    
+    cols = [col1, col2, col3, col4]
+    for idx, (btn_text, question) in enumerate(quick_questions.items()):
+        with cols[idx]:
+            if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
+                handle_user_question(question, selected_tickers, client)
+                st.rerun()
+    
+    # 显示对话历史
+    display_chat_history()
+    
+    # 自定义问题输入
+    st.markdown("---")
+    st.markdown("**✍️ 或输入你的问题：**")
+    user_input = st.chat_input("例如：这些公司中哪个最值得长期持有？")
+    
+    if user_input:
+        handle_user_question(user_input, selected_tickers, client)
+        st.rerun()
+    
+    # 清空对话按钮
+    if st.session_state.chat_history:
+        col_clear1, col_clear2, col_clear3 = st.columns([1, 1, 1])
+        with col_clear2:
+            if st.button("🗑️ 清空对话历史", key="clear_chat", use_container_width=True):
+                st.session_state.chat_history = []
+                st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+# ==========================================
 TIME_RANGE_MAP = {
     "3mo": "近3个月",
     "6mo": "近6个月", 
@@ -1154,3 +1339,105 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
+# ========== 新增：AI 对话功能 ==========
+# 在页面底部添加对话界面
+if 'selected_tickers' in locals() and selected_tickers:
+    st.markdown("---")
+    st.markdown('<div class="section-title">💬 AI 投资顾问 - 继续提问</div>', unsafe_allow_html=True)
+    
+    # 初始化对话客户端
+    try:
+        if 'chat_client' not in locals():
+            chat_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
+        
+        # 快速提问按钮
+        st.markdown("**🚀 快速提问：**")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        quick_questions = {
+            "📊 财务指标分析": f"请详细分析 {', '.join(selected_tickers)} 这些公司的财务指标。",
+            "🔬 研发管线评估": f"评估 {', '.join(selected_tickers)} 的研发管线和创新能力。",
+            "⚠️ 投资风险提示": f"分析投资 {', '.join(selected_tickers)} 的主要风险。",
+            "📈 未来趋势预测": f"预测 {', '.join(selected_tickers)} 未来6-12个月的趋势。"
+        }
+        
+        cols = [col1, col2, col3, col4]
+        for idx, (btn_text, question) in enumerate(quick_questions.items()):
+            with cols[idx]:
+                if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
+                    # 调用 AI
+                    with st.spinner("🤔 AI 正在思考..."):
+                        try:
+                            response = chat_client.chat.completions.create(
+                                model="deepseek-chat",
+                                messages=[
+                                    {"role": "system", "content": "你是专业的生物医药投资分析师，用中文回答。"},
+                                    {"role": "user", "content": question}
+                                ],
+                                temperature=0.7,
+                                max_tokens=2000
+                            )
+                            answer = response.choices[0].message.content
+                            
+                            # 保存到历史
+                            st.session_state.chat_history.append({"role": "user", "content": question})
+                            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"获取回答失败: {str(e)}")
+        
+        # 显示对话历史
+        if st.session_state.chat_history:
+            st.markdown("---")
+            st.markdown("### 📝 对话记录")
+            for msg in st.session_state.chat_history:
+                if msg['role'] == 'user':
+                    st.markdown(f'''
+                    <div class="chat-message user">
+                        <div class="chat-header">👤 你的问题</div>
+                        <div>{msg['content']}</div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'''
+                    <div class="chat-message assistant">
+                        <div class="chat-header">🤖 AI 回答</div>
+                        <div>{msg['content']}</div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+        
+        # 自定义提问
+        st.markdown("---")
+        st.markdown("**✍️ 或输入你的问题：**")
+        user_input = st.chat_input("例如：这些公司中哪个最值得长期持有？")
+        
+        if user_input:
+            with st.spinner("🤔 AI 正在思考..."):
+                try:
+                    response = chat_client.chat.completions.create(
+                        model="deepseek-chat",
+                        messages=[
+                            {"role": "system", "content": f"你是专业的生物医药投资分析师。当前分析股票：{', '.join(selected_tickers)}。用中文回答。"},
+                            {"role": "user", "content": user_input}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000
+                    )
+                    answer = response.choices[0].message.content
+                    
+                    # 保存到历史
+                    st.session_state.chat_history.append({"role": "user", "content": user_input})
+                    st.session_state.chat_history.append({"role": "assistant", "content": answer})
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"获取回答失败: {str(e)}")
+        
+        # 清空对话
+        if st.session_state.chat_history:
+            if st.button("🗑️ 清空对话历史", key="clear_chat"):
+                st.session_state.chat_history = []
+                st.rerun()
+                
+    except Exception as e:
+        st.error(f"对话功能初始化失败: {str(e)}")
+# ==========================================
