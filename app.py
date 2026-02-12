@@ -309,7 +309,7 @@ def get_ai_response(messages, client):
     """调用 DeepSeek API 获取回答"""
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model="deepseek-reasoner",
             messages=messages,
             temperature=0.7,
             max_tokens=2000
@@ -557,7 +557,7 @@ def get_deepseek_analysis(metrics_df, period):
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model="deepseek-reasoner",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -1369,7 +1369,7 @@ if 'selected_tickers' in locals() and selected_tickers:
                     with st.spinner("🤔 AI 正在思考..."):
                         try:
                             response = chat_client.chat.completions.create(
-                                model="deepseek-chat",
+                                model="deepseek-reasoner",
                                 messages=[
                                     {"role": "system", "content": "你是专业的生物医药投资分析师，用中文回答。"},
                                     {"role": "user", "content": question}
@@ -1415,7 +1415,7 @@ if 'selected_tickers' in locals() and selected_tickers:
             with st.spinner("🤔 AI 正在思考..."):
                 try:
                     response = chat_client.chat.completions.create(
-                        model="deepseek-chat",
+                        model="deepseek-reasoner",
                         messages=[
                             {"role": "system", "content": f"你是专业的生物医药投资分析师。当前分析股票：{', '.join(selected_tickers)}。用中文回答。"},
                             {"role": "user", "content": user_input}
