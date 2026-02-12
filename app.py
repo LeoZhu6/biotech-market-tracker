@@ -13,6 +13,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 import time
+import numpy as np
 
 # --- 页面配置 ---
 st.set_page_config(
@@ -816,7 +817,7 @@ if len(tickers) > 0:
                 
                 st.markdown("---")
                 
-                # === 4. 风险回报 ===
+                # === 4. 风险回报 (修复 Bug) ===
                 st.markdown('<div class="section-title">Risk-Return Analysis</div>', unsafe_allow_html=True)
                 
                 summary = []
@@ -848,12 +849,15 @@ if len(tickers) > 0:
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
+                    # 修复：使用绝对值确保 size 为正数
+                    metrics_df['Marker Size'] = np.abs(metrics_df['Sharpe Ratio']) * 10 + 5
+                    
                     fig_scat = px.scatter(
                         metrics_df, 
                         x='Volatility (%)', 
                         y='Total Return (%)',
                         text='Ticker Code',
-                        size='Sharpe Ratio',
+                        size='Marker Size',  # 使用处理后的正数
                         color='Beta', 
                         color_continuous_scale='RdYlGn_r',
                         title="Risk-Return Frontier"
@@ -881,7 +885,8 @@ if len(tickers) > 0:
                     fig_scat.update_layout(
                         height=480,
                         hovermode='closest',
-                        plot_bgcolor='white'
+                        plot_bgcolor='white',
+                        showlegend=True
                     )
                     st.plotly_chart(fig_scat, use_container_width=True)
                 
