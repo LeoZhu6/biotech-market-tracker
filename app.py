@@ -26,6 +26,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 # --- 初始化 Session State（新增）---
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
@@ -721,6 +722,59 @@ def color_return(val):
 # 标题
 st.markdown('<h1 class="main-title">BioMarket Tracker</h1>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V3</p>', unsafe_allow_html=True)
+
+# ========== 英文版时间显示 ==========
+col_time1, col_time2, col_time3, col_time4 = st.columns([2, 1, 1, 1])
+
+with col_time1:
+    # 获取当前时间
+    now = datetime.now()
+    hour = now.hour
+    
+    # 判断市场状态（美股时间：21:30-04:00 北京时间）
+    if (hour == 21 and now.minute >= 30) or (hour >= 22 and hour <= 23) or (hour >= 0 and hour < 4):
+        market_icon = "🟢"
+        market_text = "Market Open"
+    else:
+        market_icon = "🔴"
+        market_text = "Market Closed"
+    
+    # 英文时间格式
+    current_time = now.strftime("%I:%M %p")  # 03:16 PM
+    current_date = now.strftime("%b %d, %Y")  # Feb 12, 2026
+    
+    # 显示
+    st.markdown(
+        f'<div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95rem;">'
+        f'{market_icon} <b>{market_text}</b> | '
+        f'🕐 Last Update: <b>{current_time}</b> | '
+        f'📅 {current_date}'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
+with col_time2:
+    auto_refresh = st.checkbox("Auto Refresh (30s)", key="auto_refresh_checkbox")
+
+with col_time3:
+    if st.button("🔄 Refresh", use_container_width=True, key="refresh_button"):
+        st.rerun()
+
+with col_time4:
+    if st.button("✨ New Analysis", use_container_width=True, key="new_analysis_button"):
+        st.session_state.analysis_completed = False
+        st.session_state.analyzed_tickers = []
+        st.session_state.chat_history = []
+        st.session_state.analysis_context = None
+        st.rerun()
+
+# 自动刷新逻辑
+if auto_refresh:
+    time.sleep(30)
+    st.rerun()
+
+st.markdown("---")
+# ====================================
 
 # ==================== 侧边栏 ====================
 with st.sidebar:
