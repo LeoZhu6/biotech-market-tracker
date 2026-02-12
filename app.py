@@ -723,7 +723,7 @@ st.markdown('<h1 class="main-title">BioMarket Tracker</h1>', unsafe_allow_html=T
 st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V3</p>', unsafe_allow_html=True)
 
 # ========== 英文版时间显示 ==========
-col_time1, col_time2, col_time3, col_time4 = st.columns([2, 1, 1])
+col_time1, col_time2, col_time3 = st.columns([2, 1, 1])
 
 with col_time1:
     # 获取当前时间
