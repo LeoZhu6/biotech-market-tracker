@@ -751,42 +751,22 @@ with col_time1:
     )
 
 with col_time2:
-    if st.button(" Refresh", use_container_width=True, key="refresh_btn"):
-        # ========== 增强版：添加调试信息 ==========
+    if st.button("🔄 Refresh", use_container_width=True, key="refresh_btn"):
+        # 1. 检查当前是否在分析状态
+        was_analyzing = st.session_state.get('analysis_started', False)
         
-        # 保存所有关键状态
-        states_to_preserve = {
-            'analysis_started': st.session_state.get('analysis_started', False),
-            'analysis_completed': st.session_state.get('analysis_completed', False),
-            'selected_tickers': st.session_state.get('selected_tickers', []),
-            'selected_time_range': st.session_state.get('selected_time_range', '1y'),
-            'analyzed_tickers': st.session_state.get('analyzed_tickers', []),
-            'ai_report': st.session_state.get('ai_report', ''),
-            'analysis_context': st.session_state.get('analysis_context', None)
-        }
-        
-        # 清除缓存
+        # 2. 清除缓存
         st.cache_data.clear()
         
-        # 恢复所有状态
-        for key, value in states_to_preserve.items():
-            st.session_state[key] = value
+        # 3. 强制保留分析状态
+        st.session_state.analysis_started = was_analyzing
         
-        # 更新时间
+        # 4. 更新时间
         st.session_state.last_update = datetime.now()
         
-        # 预加载数据
-        if states_to_preserve['analysis_started'] and states_to_preserve['selected_tickers']:
-            try:
-                _ = get_data(
-                    states_to_preserve['selected_tickers'], 
-                    states_to_preserve['selected_time_range']
-                )
-            except:
-                pass
-        
-        # 立即 rerun
+        # 5. 立即 rerun（不要任何其他操作）
         st.rerun()
+
 
 with col_time3:
     if st.button(" New Analysis", use_container_width=True):
