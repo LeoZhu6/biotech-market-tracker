@@ -547,7 +547,7 @@ The author and contributors assume **no liability** for any financial losses inc
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/LeoZhu6/biomarket-tracker/issues)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/LeoZhu6/biotech-market-tracker/issues)
 - 💡 **Feature Requests**: [Submit a request](https://github.com/LeoZhu6/biomarket-tracker/issues/new)
 - 📧 **Email**: rzhuar@connect.ust.hk
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/LeoZhu6/biomarket-tracker/discussions)
