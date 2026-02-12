@@ -751,7 +751,7 @@ with col_time1:
     )
 
 with col_time2:
-    if st.button("🔄 Refresh", use_container_width=True, key="refresh_btn"):
+    if st.button(" Refresh", use_container_width=True, key="refresh_btn"):
         # 不要做任何状态操作，只清除缓存
         st.cache_data.clear()
         st.session_state.last_update = datetime.now()
@@ -928,6 +928,7 @@ with st.sidebar:
     st.caption("Data: Yahoo Finance")
     st.caption("AI: DeepSeek-V3")
     st.caption("Dev: Runze Zhu")
+
 
 # ==================== 主内容区 ====================
 
@@ -1216,7 +1217,7 @@ if should_show_analysis:
                     display_df = metrics_df[['Name', 'Total Return (%)', 'Volatility (%)', 'Beta', 'Sharpe Ratio']].copy()
                     display_df.columns = ['Name', 'Return(%)', 'Vol(%)', 'Beta', 'Sharpe']
                     display_df = display_df.set_index('Name')
-                
+                    
                     styled_df = display_df.style.format("{:.2f}").applymap(
                         color_return, 
                         subset=['Return(%)']
@@ -1260,14 +1261,15 @@ if should_show_analysis:
                                     content = chunk.choices[0].delta.content
                                     full_response += content
                                     response_placeholder.markdown(full_response + "▌")
+                            
+                            response_placeholder.markdown(full_response)
+                            st.session_state.ai_report = full_response
                             st.session_state.analysis_completed = True
                             st.session_state.analyzed_tickers = tickers.copy()
                             st.session_state.analysis_context = full_response
                             status.update(label="✅ Analysis completed!", state="complete")
                 
                 if st.session_state.ai_report:
-                    st.markdown(st.session_state.ai_report)
-                    
                     st.markdown("---")
                     
                     st.markdown('<div class="section-title">Export Options</div>', unsafe_allow_html=True)
@@ -1309,6 +1311,148 @@ if should_show_analysis:
         except Exception as e:
             st.error(f"Error: {e}")
             st.warning("Please try refreshing the page")
+
+elif len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_started:
+    # ========== 显示 Start Analysis 按钮 ==========
+    st.markdown("---")
+    
+    custom_list = ', '.join([TICKER_MAP.get(t, t) for t in st.session_state.custom_tickers]) if st.session_state.custom_tickers else "None"
+    preset_list = ', '.join([TICKER_MAP.get(t, t) for t in st.session_state.preset_tickers]) if st.session_state.preset_tickers else "None"
+    
+    st.markdown(f"""
+    <div class="selection-summary">
+        <h3 style="margin: 0 0 1rem 0; color: #667eea;">Analysis Configuration</h3>
+        <p style="margin: 0.5rem 0;"><b>Total Selected:</b> {len(st.session_state.selected_tickers)} stocks</p>
+        <p style="margin: 0.5rem 0; font-size: 0.9rem; color: #666;">
+            <b>Custom:</b> {custom_list}<br/>
+            <b>Preset:</b> {preset_list}
+        </p>
+        <p style="margin: 0.5rem 0;"><b>Time Period:</b> {TIME_RANGE_MAP.get(st.session_state.selected_time_range, st.session_state.selected_time_range)}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("Start Analysis", type="primary", use_container_width=True, key="start_analysis"):
+            st.session_state.analysis_started = True
+            st.rerun()
+
+else:
+    # ========== 显示欢迎页面 ==========
+    st.markdown("---")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown("""
+        <div style="text-align: center; padding: 3rem 0;">
+            <h2 style="color: #667eea; font-weight: 700;">Welcome to BioMarket Tracker</h2>
+            <p style="font-size: 1rem; color: #666; margin: 1.5rem 0;">
+                Professional biotech equity analysis platform
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.info("""
+        **Getting Started**
+        
+        1. Open the sidebar on the left
+        2. Enter custom tickers OR select from preset list (or both!)
+        3. Choose your analysis time period
+        4. Click "Start Analysis" button
+        5. View comprehensive market insights
+        """)
+        
+        st.success("""
+        **Key Features**
+        
+        - Combine custom search with preset stocks
+        - Global stock search with real-time validation
+        - Technical indicators (RSI, MACD, Bollinger Bands)
+        - Smart price alerts and notifications
+        - Risk-return analysis (Beta, Volatility, Sharpe)
+        - AI-powered investment reports
+        - Professional PDF export
+        - Favorites management
+        """)
+        
+        st.markdown("""
+        <div style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; 
+                    background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+            <p style="color: #666; font-size: 0.9rem; margin: 0;">
+                Disclaimer: For educational purposes only. Not investment advice.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ========== AI 对话功能 ==========
+if st.session_state.get('analysis_completed', False):
+    st.markdown("---")
+    st.markdown('<div class="section-title">💬 Continue Discussion with AI Analyst</div>', unsafe_allow_html=True)
+    
+    try:
+        analyzed_tickers = st.session_state.get('analyzed_tickers', [])
+        
+        if analyzed_tickers and len(analyzed_tickers) > 0:
+            chat_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
+            
+            st.markdown("**🚀 Quick Questions:**")
+            col1, col2, col3, col4 = st.columns(4)
+
+            quick_questions = {
+                "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(analyzed_tickers)} in detail.",
+                "🔬 R&D Pipeline": f"Evaluate the R&D pipeline and clinical trials of {', '.join(analyzed_tickers)}.",
+                "⚠️ Investment Risks": f"What are the main investment risks for {', '.join(analyzed_tickers)}?",
+                "📈 Future Trends": f"Predict market trends for {', '.join(analyzed_tickers)} in next 6-12 months."
+            }
+
+            cols = [col1, col2, col3, col4]
+            for idx, (btn_text, question) in enumerate(quick_questions.items()):
+                with cols[idx]:
+                    if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
+                        with st.spinner("🤔 AI is thinking..."):
+                            handle_user_question(question, analyzed_tickers, chat_client)
+                        st.rerun()
+            
+            if st.session_state.chat_history:
+                st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
+                st.markdown("### 💬 Chat History")
+                
+                for msg in st.session_state.chat_history:
+                    if msg['role'] == 'user':
+                        st.markdown(f'''
+                        <div class="chat-message user">
+                            <div class="chat-header">👤 Your Question</div>
+                            <div>{msg['content']}</div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'''
+                        <div class="chat-message assistant">
+                            <div class="chat-header">🤖 AI Response</div>
+                            <div>{msg['content']}</div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("**✍️ Or ask your own question:**")
+            user_input = st.chat_input("e.g., Which company has the strongest pipeline?")
+            
+            if user_input:
+                with st.spinner("🤔 AI is thinking..."):
+                    handle_user_question(user_input, analyzed_tickers, chat_client)
+                st.rerun()
+            
+            if st.session_state.chat_history:
+                col_clear1, col_clear2, col_clear3 = st.columns([1, 1, 1])
+                with col_clear2:
+                    if st.button("🗑️ Clear Chat History", key="clear_chat", use_container_width=True):
+                        st.session_state.chat_history = []
+                        st.rerun()
+                        
+    except Exception as e:
+        st.error(f"Chat feature error: {str(e)}")
+
 
 elif len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_started:
     # ========== 显示 Start Analysis 按钮 ==========
