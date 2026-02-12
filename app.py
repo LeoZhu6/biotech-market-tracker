@@ -466,11 +466,11 @@ def add_chat_interface(selected_tickers, client):
     st.markdown('</div>', unsafe_allow_html=True)
 # ==========================================
 TIME_RANGE_MAP = {
-    "3mo": "近3个月",
-    "6mo": "近6个月", 
-    "1y": "近1年",
-    "3y": "近3年",
-    "5y": "近5年"
+    "3mo": "Last 3 Months",
+    "6mo": "Last 6 Months", 
+    "1y": "Last 1 Year",
+    "3y": "Last 3 Years",
+    "5y": "Last 5 Years"
 }
 
 # --- Session State 初始化 ---
@@ -973,16 +973,6 @@ should_show_analysis = (
      st.session_state.get('is_refreshing', False)) and  
     len(st.session_state.get('selected_tickers', [])) > 0
 )
-
-# 临时调试（找到问题后删除）
-if st.session_state.get('selected_tickers'):
-    with st.sidebar.expander("🔍 Debug", expanded=False):
-        st.json({
-            "analysis_started": st.session_state.get('analysis_started', False),
-            "is_refreshing": st.session_state.get('is_refreshing', False),
-            "should_show": should_show_analysis,
-            "tickers_count": len(st.session_state.get('selected_tickers', []))
-        })
 
 if should_show_analysis:
     # ========== 显示分析结果 ==========
