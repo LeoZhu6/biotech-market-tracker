@@ -462,8 +462,7 @@ if 'ai_report' not in st.session_state:
     st.session_state.ai_report = ""
 if 'last_update' not in st.session_state:
     st.session_state.last_update = None
-if 'auto_refresh' not in st.session_state:
-    st.session_state.auto_refresh = False
+
 if 'analysis_started' not in st.session_state:
     st.session_state.analysis_started = False
 if 'selected_tickers' not in st.session_state:
@@ -724,7 +723,7 @@ st.markdown('<h1 class="main-title">BioMarket Tracker</h1>', unsafe_allow_html=T
 st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V3</p>', unsafe_allow_html=True)
 
 # ========== 英文版时间显示 ==========
-col_time1, col_time2, col_time3, col_time4 = st.columns([2, 1, 1, 1])
+col_time1, col_time2, col_time3, col_time4 = st.columns([2, 1, 1])
 
 with col_time1:
     # 获取当前时间
@@ -752,26 +751,17 @@ with col_time1:
     )
 
 with col_time2:
-    auto_refresh = st.checkbox("Auto Refresh (30s)", key="auto_refresh_checkbox")
-
-with col_time3:
     if st.button(" Refresh", use_container_width=True, key="refresh_button"):
         st.rerun()
 
-with col_time4:
+with col_time3:
     if st.button(" New Analysis", use_container_width=True, key="new_analysis_button"):
         st.session_state.analysis_completed = False
         st.session_state.analyzed_tickers = []
         st.session_state.chat_history = []
         st.session_state.analysis_context = None
         st.rerun()
-
-# 自动刷新逻辑
-if auto_refresh:
-    time.sleep(30)
-    st.rerun()
-
-# ====================================
+    
 
 # ==================== 侧边栏 ====================
 with st.sidebar:
@@ -965,8 +955,7 @@ if len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_
 elif st.session_state.analysis_started and len(st.session_state.selected_tickers) > 0:
     tickers = st.session_state.selected_tickers
     time_range = st.session_state.selected_time_range
-    if 'auto_refresh' not in st.session_state:
-        st.session_state.auto_refresh = False
+
     with st.spinner('Loading market data...'):
         try:
             prices, returns = get_data(tickers, time_range)
@@ -1336,10 +1325,7 @@ elif st.session_state.analysis_started and len(st.session_state.selected_tickers
             st.error(f"Error: {e}")
             st.warning("Please try refreshing the page")
             
-        if st.session_state.auto_refresh:
-            time.sleep(30)
-            st.rerun()
-
+        
 else:
     st.markdown("---")
     
@@ -1375,7 +1361,6 @@ else:
         - Risk-return analysis (Beta, Volatility, Sharpe)
         - AI-powered investment reports
         - Professional PDF export
-        - Auto-refresh every 30 seconds
         - Favorites management
         """)
         
@@ -1466,4 +1451,3 @@ if st.session_state.get('analysis_completed', False):
     except Exception as e:
         st.error(f"Chat feature error: {str(e)}")
 # ====================================================
-
