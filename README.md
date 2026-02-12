@@ -549,7 +549,7 @@ The author and contributors assume **no liability** for any financial losses inc
 
 - 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/biomarket-tracker/issues)
 - 💡 **Feature Requests**: [Submit a request](https://github.com/yourusername/biomarket-tracker/issues/new)
-- 📧 **Email**: your-email@example.com
+- 📧 **Email**: rzhuar@connect.ust.hk
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/biomarket-tracker/discussions)
 
 ---
