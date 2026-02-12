@@ -26,18 +26,15 @@ st.set_page_config(
 # --- 自定义 CSS 样式 ---
 st.markdown("""
 <style>
-    /* 主题色彩 */
     :root {
         --primary-color: #1e88e5;
         --secondary-color: #43a047;
         --accent-color: #ff6f00;
     }
     
-    /* 隐藏默认元素 */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 标题样式 */
     .main-title {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
@@ -57,7 +54,6 @@ st.markdown("""
         font-weight: 400;
     }
     
-    /* 卡片样式 */
     .price-card {
         background: white;
         padding: 1.2rem;
@@ -99,7 +95,6 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* 状态标签 */
     .status-badge {
         display: inline-block;
         padding: 0.25rem 0.75rem;
@@ -127,12 +122,10 @@ st.markdown("""
         border: 1px solid #ff9800;
     }
     
-    /* 侧边栏 */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
     }
     
-    /* 按钮 */
     .stButton>button {
         border-radius: 8px;
         font-weight: 600;
@@ -144,7 +137,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
-    /* 实时指示器 */
     .live-indicator {
         display: inline-block;
         width: 8px;
@@ -160,7 +152,6 @@ st.markdown("""
         50% { opacity: 0.3; }
     }
     
-    /* 提醒卡片 */
     .alert-card {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
         padding: 1rem 1.2rem;
@@ -170,19 +161,16 @@ st.markdown("""
         font-weight: 500;
     }
     
-    /* 分隔线 */
     hr {
         margin: 2rem 0;
         border: none;
         border-top: 1px solid #e0e0e0;
     }
     
-    /* 表格优化 */
     .dataframe {
         font-size: 0.9rem;
     }
     
-    /* 区块标题 */
     .section-title {
         font-size: 1.5rem;
         font-weight: 700;
@@ -190,6 +178,48 @@ st.markdown("""
         margin: 1.5rem 0 1rem 0;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #667eea;
+    }
+    
+    .analyze-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .analyze-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    .selection-summary {
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 2px solid #667eea;
+        margin: 1rem 0;
+    }
+    
+    /* 新增：股票标签样式 */
+    .ticker-tag {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        margin: 0.2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .ticker-tag.custom {
+        background: #43a047;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -232,6 +262,16 @@ if 'last_update' not in st.session_state:
     st.session_state.last_update = None
 if 'auto_refresh' not in st.session_state:
     st.session_state.auto_refresh = False
+if 'analysis_started' not in st.session_state:
+    st.session_state.analysis_started = False
+if 'selected_tickers' not in st.session_state:
+    st.session_state.selected_tickers = []
+if 'selected_time_range' not in st.session_state:
+    st.session_state.selected_time_range = '1y'
+if 'custom_tickers' not in st.session_state:
+    st.session_state.custom_tickers = []
+if 'preset_tickers' not in st.session_state:
+    st.session_state.preset_tickers = []
 
 # --- 工具函数 ---
 @st.cache_data(ttl=3600)
@@ -461,21 +501,6 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
 st.markdown('<h1 class="main-title">BioMarket Tracker</h1>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V3</p>', unsafe_allow_html=True)
 
-# 状态栏
-col1, col2, col3 = st.columns([2, 1, 1])
-with col1:
-    if st.session_state.last_update:
-        st.markdown(f'<span class="live-indicator"></span>Last Update: {st.session_state.last_update.strftime("%H:%M:%S")}', unsafe_allow_html=True)
-    else:
-        st.caption("Waiting for data...")
-with col2:
-    auto_refresh = st.checkbox("Auto Refresh (30s)", value=st.session_state.auto_refresh)
-    st.session_state.auto_refresh = auto_refresh
-with col3:
-    if st.button("Refresh Now", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-
 # ==================== 侧边栏 ====================
 with st.sidebar:
     st.markdown("### Control Panel")
@@ -489,7 +514,8 @@ with st.sidebar:
         custom_input = st.text_input(
             "Ticker codes",
             placeholder="e.g., BNTX, CRSP, BEAM",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="custom_input"
         )
         
         custom_tickers = []
@@ -513,6 +539,9 @@ with st.sidebar:
             if invalid_tickers:
                 st.error(f"Invalid: {', '.join(invalid_tickers)}")
         
+        # 保存自定义股票到 session state
+        st.session_state.custom_tickers = custom_tickers
+        
         st.markdown("---")
         
         st.markdown("**Popular Biotech**")
@@ -524,18 +553,45 @@ with st.sidebar:
             default=[], 
             format_func=lambda x: TICKER_MAP.get(x, x),
             placeholder="Choose from list...",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="preset_select"
         )
         
-        tickers = list(set(preset_tickers + custom_tickers))
+        # 保存预设股票到 session state
+        st.session_state.preset_tickers = preset_tickers
         
-        if tickers:
-            st.info(f"Selected: **{len(tickers)}** stocks")
-            st.caption(', '.join(tickers))
+        # 合并两个来源的股票（去重）
+        all_tickers = list(set(st.session_state.custom_tickers + st.session_state.preset_tickers))
+        st.session_state.selected_tickers = all_tickers
+        
+        # 显示合并后的选择
+        if all_tickers:
+            st.markdown("---")
+            st.markdown("**Current Selection**")
+            st.info(f"Total: **{len(all_tickers)}** stocks")
             
+            # 分类显示
+            if st.session_state.custom_tickers:
+                st.caption("Custom:")
+                for ticker in st.session_state.custom_tickers:
+                    st.markdown(f'<span class="ticker-tag custom">{ticker}</span>', unsafe_allow_html=True)
+            
+            if st.session_state.preset_tickers:
+                st.caption("Preset:")
+                for ticker in st.session_state.preset_tickers:
+                    st.markdown(f'<span class="ticker-tag">{ticker}</span>', unsafe_allow_html=True)
+            
+            # 保存到收藏
             if st.button("Save to Favorites", use_container_width=True):
-                st.session_state.favorite_tickers = tickers
+                st.session_state.favorite_tickers = all_tickers
                 st.success("Saved!")
+            
+            # 清空选择
+            if st.button("Clear All", use_container_width=True):
+                st.session_state.custom_tickers = []
+                st.session_state.preset_tickers = []
+                st.session_state.selected_tickers = []
+                st.rerun()
         
         st.markdown("---")
         
@@ -547,13 +603,14 @@ with st.sidebar:
             index=2,
             label_visibility="collapsed"
         )
+        st.session_state.selected_time_range = time_range
     
     with tab2:
         st.markdown("**Price Alerts**")
         st.caption("Get notified when price targets are hit")
         
-        if tickers:
-            alert_ticker = st.selectbox("Stock", tickers, format_func=lambda x: TICKER_MAP.get(x, x))
+        if st.session_state.selected_tickers:
+            alert_ticker = st.selectbox("Stock", st.session_state.selected_tickers, format_func=lambda x: TICKER_MAP.get(x, x))
             
             col1, col2 = st.columns(2)
             with col1:
@@ -597,8 +654,11 @@ with st.sidebar:
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Load", use_container_width=True):
-                    st.info("Use Selection tab")
+                if st.button("Load Favorites", use_container_width=True):
+                    # 将收藏的股票加载到预设选择中
+                    st.session_state.preset_tickers = st.session_state.favorite_tickers
+                    st.success("Loaded! Check Selection tab")
+                    st.rerun()
             with col2:
                 if st.button("Clear", use_container_width=True):
                     st.session_state.favorite_tickers = []
@@ -612,8 +672,60 @@ with st.sidebar:
     st.caption("AI: DeepSeek-V3")
     st.caption("Dev: Runze Zhu")
 
-# ==================== 主内容 ====================
-if len(tickers) > 0:
+# ==================== 主内容区 ====================
+
+# 如果有选择股票，显示选择摘要和分析按钮
+if len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_started:
+    st.markdown("---")
+    
+    # 选择摘要
+    custom_list = ', '.join([TICKER_MAP.get(t, t) for t in st.session_state.custom_tickers]) if st.session_state.custom_tickers else "None"
+    preset_list = ', '.join([TICKER_MAP.get(t, t) for t in st.session_state.preset_tickers]) if st.session_state.preset_tickers else "None"
+    
+    st.markdown(f"""
+    <div class="selection-summary">
+        <h3 style="margin: 0 0 1rem 0; color: #667eea;">Analysis Configuration</h3>
+        <p style="margin: 0.5rem 0;"><b>Total Selected:</b> {len(st.session_state.selected_tickers)} stocks</p>
+        <p style="margin: 0.5rem 0; font-size: 0.9rem; color: #666;">
+            <b>Custom:</b> {custom_list}<br/>
+            <b>Preset:</b> {preset_list}
+        </p>
+        <p style="margin: 0.5rem 0;"><b>Time Period:</b> {TIME_RANGE_MAP.get(st.session_state.selected_time_range, st.session_state.selected_time_range)}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 分析按钮
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("Start Analysis", type="primary", use_container_width=True, key="start_analysis"):
+            st.session_state.analysis_started = True
+            st.rerun()
+
+# 如果已经开始分析，显示完整分析结果
+elif st.session_state.analysis_started and len(st.session_state.selected_tickers) > 0:
+    tickers = st.session_state.selected_tickers
+    time_range = st.session_state.selected_time_range
+    
+    # 顶部控制栏
+    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+    with col1:
+        if st.session_state.last_update:
+            st.markdown(f'<span class="live-indicator"></span>Last Update: {st.session_state.last_update.strftime("%H:%M:%S")}', unsafe_allow_html=True)
+        else:
+            st.caption("Loading data...")
+    with col2:
+        auto_refresh = st.checkbox("Auto Refresh (30s)", value=st.session_state.auto_refresh)
+        st.session_state.auto_refresh = auto_refresh
+    with col3:
+        if st.button("Refresh Data", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+    with col4:
+        if st.button("New Analysis", use_container_width=True):
+            st.session_state.analysis_started = False
+            st.session_state.ai_report = ""
+            st.rerun()
+    
     with st.spinner('Loading market data...'):
         try:
             prices, returns = get_data(tickers, time_range)
@@ -817,7 +929,7 @@ if len(tickers) > 0:
                 
                 st.markdown("---")
                 
-                # === 4. 风险回报 (修复 Bug) ===
+                # === 4. 风险回报 ===
                 st.markdown('<div class="section-title">Risk-Return Analysis</div>', unsafe_allow_html=True)
                 
                 summary = []
@@ -857,7 +969,7 @@ if len(tickers) > 0:
                         x='Volatility (%)', 
                         y='Total Return (%)',
                         text='Ticker Code',
-                        size='Marker Size',  # 使用处理后的正数
+                        size='Marker Size',
                         color='Beta', 
                         color_continuous_scale='RdYlGn_r',
                         title="Risk-Return Frontier"
@@ -988,6 +1100,11 @@ if len(tickers) > 0:
         except Exception as e:
             st.error(f"Error: {e}")
             st.warning("Please try refreshing the page")
+            
+        # 自动刷新
+        if st.session_state.auto_refresh:
+            time.sleep(30)
+            st.rerun()
 
 else:
     # === 欢迎页 ===
@@ -1009,14 +1126,16 @@ else:
         **Getting Started**
         
         1. Open the sidebar on the left
-        2. Select stocks in the "Selection" tab
+        2. Enter custom tickers OR select from preset list (or both!)
         3. Choose your analysis time period
-        4. Let AI generate professional insights
+        4. Click "Start Analysis" button
+        5. View comprehensive market insights
         """)
         
         st.success("""
         **Key Features**
         
+        - Combine custom search with preset stocks
         - Global stock search with real-time validation
         - Technical indicators (RSI, MACD, Bollinger Bands)
         - Smart price alerts and notifications
@@ -1035,8 +1154,3 @@ else:
             </p>
         </div>
         """, unsafe_allow_html=True)
-
-# 自动刷新
-if st.session_state.auto_refresh and len(tickers) > 0:
-    time.sleep(30)
-    st.rerun()
