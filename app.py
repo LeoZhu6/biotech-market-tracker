@@ -752,17 +752,31 @@ with col_time1:
 
 with col_time2:
     if st.button(" Refresh", use_container_width=True):
-        if 'get_data' in dir(st.cache_data):
-            st.cache_data.clear()
+        # ========== 关键修复：确保状态不丢失 ==========
+        # 1. 保存当前分析状态
+        if st.session_state.get('analysis_started'):
+            # 强制保留分析状态
+            st.session_state.analysis_started = True
         
+        # 2. 清除数据缓存（但不清除状态）
+        st.cache_data.clear()
+        
+        # 3. 更新时间戳
         st.session_state.last_update = datetime.now()
         
-        if 'cache_buster' not in st.session_state:
-            st.session_state.cache_buster = 0
-        st.session_state.cache_buster += 1
+        # 4. 如果正在分析中，预加载数据避免闪烁
+        if (st.session_state.get('analysis_started') and 
+            st.session_state.get('selected_tickers')):
+            try:
+                with st.spinner("🔄 Refreshing data..."):
+                    tickers = st.session_state.selected_tickers
+                    time_range = st.session_state.selected_time_range
+                    # 触发数据重新获取
+                    _ = get_data(tickers, time_range)
+            except Exception as e:
+                pass  # 静默失败，让主流程处理
         
-        st.success("Data refreshed!")
-        time.sleep(0.5) 
+        # 5. 直接 rerun，不显示成功消息（避免阻塞）
         st.rerun()
 
 with col_time3:
