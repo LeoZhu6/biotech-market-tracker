@@ -547,16 +547,16 @@ The author and contributors assume **no liability** for any financial losses inc
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/biomarket-tracker/issues)
-- 💡 **Feature Requests**: [Submit a request](https://github.com/yourusername/biomarket-tracker/issues/new)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/LeoZhu6/biomarket-tracker/issues)
+- 💡 **Feature Requests**: [Submit a request](https://github.com/LeoZhu6/biomarket-tracker/issues/new)
 - 📧 **Email**: rzhuar@connect.ust.hk
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/biomarket-tracker/discussions)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/LeoZhu6/biomarket-tracker/discussions)
 
 ---
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/biomarket-tracker&type=Date)](https://star-history.com/#yourusername/biomarket-tracker&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=LeoZhu6/biomarket-tracker&type=Date)](https://star-history.com/#LeoZhu6/biomarket-tracker&Date)
 
 ---
 
@@ -566,8 +566,8 @@ The author and contributors assume **no liability** for any financial losses inc
 
 **If you find this project helpful, please consider giving it a ⭐!**
 
-[Report Bug](https://github.com/yourusername/biomarket-tracker/issues) · 
-[Request Feature](https://github.com/yourusername/biomarket-tracker/issues) · 
-[Documentation](https://github.com/yourusername/biomarket-tracker/wiki)
+[Report Bug](https://github.com/LeoZhu6/biomarket-tracker/issues) · 
+[Request Feature](https://github.com/LeoZhu6/biomarket-tracker/issues) · 
+[Documentation](https://github.com/LeoZhu6/biomarket-tracker/wiki)
 
 </div>
