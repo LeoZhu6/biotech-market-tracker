@@ -1,6 +1,6 @@
 streamlit
-numpy
+yfinance
 pandas
 plotly
-yfinance
 openai
+reportlab
