@@ -733,10 +733,8 @@ with col_time1:
     
     # 判断市场状态（美股时间：21:30-04:00 北京时间）
     if (hour == 21 and now.minute >= 30) or (hour >= 22 and hour <= 23) or (hour >= 0 and hour < 4):
-        market_icon = "🟢"
         market_text = "Market Open"
     else:
-        market_icon = "🔴"
         market_text = "Market Closed"
     
     # 英文时间格式
@@ -747,8 +745,8 @@ with col_time1:
     st.markdown(
         f'<div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95rem;">'
         f'{market_icon} <b>{market_text}</b> | '
-        f'🕐 Last Update: <b>{current_time}</b> | '
-        f'📅 {current_date}'
+        f' Last Update: <b>{current_time}</b> | '
+        f' {current_date}'
         f'</div>',
         unsafe_allow_html=True
     )
@@ -757,11 +755,11 @@ with col_time2:
     auto_refresh = st.checkbox("Auto Refresh (30s)", key="auto_refresh_checkbox")
 
 with col_time3:
-    if st.button("🔄 Refresh", use_container_width=True, key="refresh_button"):
+    if st.button(" Refresh", use_container_width=True, key="refresh_button"):
         st.rerun()
 
 with col_time4:
-    if st.button("✨ New Analysis", use_container_width=True, key="new_analysis_button"):
+    if st.button(" New Analysis", use_container_width=True, key="new_analysis_button"):
         st.session_state.analysis_completed = False
         st.session_state.analyzed_tickers = []
         st.session_state.chat_history = []
@@ -968,26 +966,8 @@ if len(st.session_state.selected_tickers) > 0 and not st.session_state.analysis_
 elif st.session_state.analysis_started and len(st.session_state.selected_tickers) > 0:
     tickers = st.session_state.selected_tickers
     time_range = st.session_state.selected_time_range
-    
-    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
-    with col1:
-        if st.session_state.last_update:
-            st.markdown(f'<span class="live-indicator"></span>Last Update: {st.session_state.last_update.strftime("%H:%M:%S")}', unsafe_allow_html=True)
-        else:
-            st.caption("Loading data...")
-    with col2:
-        auto_refresh = st.checkbox("Auto Refresh (30s)", value=st.session_state.auto_refresh)
-        st.session_state.auto_refresh = auto_refresh
-    with col3:
-        if st.button("Refresh Data", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
-    with col4:
-        if st.button("New Analysis", use_container_width=True):
-            st.session_state.analysis_started = False
-            st.session_state.ai_report = ""
-            st.rerun()
-    
+    if 'auto_refresh' not in st.session_state:
+        st.session_state.auto_refresh = False
     with st.spinner('Loading market data...'):
         try:
             prices, returns = get_data(tickers, time_range)
