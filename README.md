@@ -49,22 +49,6 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 
 ---
 
-## 📸 Screenshots
-
-### Main Dashboard
-![Dashboard](screenshots/dashboard.png)
-*Real-time price tracking with performance metrics*
-
-### Technical Analysis
-![Technical Analysis](screenshots/technical.png)
-*RSI, MACD, and Bollinger Bands visualization*
-
-### AI Investment Report
-![AI Report](screenshots/ai-report.png)
-*DeepSeek-V3 generated professional analysis*
-
----
-
 ## 🛠️ Tech Stack
 
 | Component | Technology |
