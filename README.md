@@ -553,7 +553,7 @@ The author and contributors assume **no liability** for any financial losses inc
 
 ---
 
-## ⭐ Star History
+## :star: Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=LeoZhu6/biomarket-tracker&type=Date)](https://star-history.com/#LeoZhu6/biomarket-tracker&Date)
 
