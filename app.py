@@ -751,17 +751,18 @@ with col_time1:
     )
 
 with col_time2:
-    if st.button(" Refresh", use_container_width=True, key="refresh_button"):
+    if st.button("Refresh"):
+        st.cache_data.clear()
+        st.session_state.last_update = datetime.now()
         st.rerun()
 
 with col_time3:
-    if st.button(" New Analysis", use_container_width=True, key="new_analysis_button"):
+    if st.button("✨ New Analysis"):
         st.session_state.analysis_completed = False
         st.session_state.analyzed_tickers = []
         st.session_state.chat_history = []
-        st.session_state.analysis_context = None
+        st.cache_data.clear()
         st.rerun()
-    
 
 # ==================== 侧边栏 ====================
 with st.sidebar:
