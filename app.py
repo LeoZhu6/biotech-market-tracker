@@ -511,40 +511,141 @@ def validate_and_get_name(ticker):
 
 import requests
 from typing import List, Dict
+import difflib
+
+# ========== 新增：中英文映射表 ==========
+COMPANY_NAME_MAP = {
+    # 中文拼音 -> 英文名称
+    'huirui': 'Pfizer',
+    'hengrui': 'Jiangsu Hengrui',
+    'hengruiyiyao': 'Jiangsu Hengrui',
+    'modena': 'Moderna',
+    'modena': 'Moderna',
+    'jilide': 'Gilead',
+    'zaisheng': 'Regeneron',
+    'futai': 'Vertex',
+    'anjin': 'Amgen',
+    'nuohe': 'Novo Nordisk',
+    'nuohenuode': 'Novo Nordisk',
+    'lili': 'Eli Lilly',
+    'lilai': 'Eli Lilly',
+    'lilly': 'Eli Lilly',
+    'astrazeneca': 'AstraZeneca',
+    'azn': 'AstraZeneca',
+    'johnson': 'Johnson & Johnson',
+    'jnj': 'Johnson & Johnson',
+    'qiangsheng': 'Johnson & Johnson',
+    'biontech': 'BioNTech',
+    'baiao': 'BioNTech',
+    'sanofi': 'Sanofi',
+    'sainuofi': 'Sanofi',
+    'roche': 'Roche',
+    'luoshi': 'Roche',
+    'novartis': 'Novartis',
+    'nuohuashi': 'Novartis',
+    'abbvie': 'AbbVie',
+    'aibeiwei': 'AbbVie',
+    'merck': 'Merck',
+    'moshade': 'Merck',
+    'gsk': 'GlaxoSmithKline',
+    'gelanksu': 'GlaxoSmithKline',
+    'bristol': 'Bristol Myers Squibb',
+    'baimei': 'Bristol Myers Squibb',
+    'takeda': 'Takeda',
+    'wutian': 'Takeda',
+    
+    # 常见错误拼写
+    'pfizer': 'Pfizer',
+    'phizer': 'Pfizer',
+    'pifzer': 'Pfizer',
+    'moderna': 'Moderna',
+    'moderan': 'Moderna',
+    'gilead': 'Gilead',
+    'giliead': 'Gilead',
+}
+
+# ========== 新增：热门生物医药公司 ==========
+POPULAR_BIOTECH_SEARCH = [
+    {'symbol': 'PFE', 'name': 'Pfizer (辉瑞)', 'keywords': ['pfizer', 'huirui', '辉瑞']},
+    {'symbol': 'MRNA', 'name': 'Moderna (莫德纳)', 'keywords': ['moderna', 'modena', '莫德纳']},
+    {'symbol': 'GILD', 'name': 'Gilead Sciences (吉利德)', 'keywords': ['gilead', 'jilide', '吉利德']},
+    {'symbol': 'REGN', 'name': 'Regeneron (再生元)', 'keywords': ['regeneron', 'zaisheng', '再生元']},
+    {'symbol': 'VRTX', 'name': 'Vertex (福泰)', 'keywords': ['vertex', 'futai', '福泰']},
+    {'symbol': 'AMGN', 'name': 'Amgen (安进)', 'keywords': ['amgen', 'anjin', '安进']},
+    {'symbol': 'LLY', 'name': 'Eli Lilly (礼来)', 'keywords': ['lilly', 'lili', 'lilai', '礼来']},
+    {'symbol': 'NVO', 'name': 'Novo Nordisk (诺和诺德)', 'keywords': ['novo', 'nuohe', '诺和']},
+    {'symbol': 'BNTX', 'name': 'BioNTech (拜恩泰科)', 'keywords': ['biontech', 'baiao', '拜恩']},
+    {'symbol': 'JNJ', 'name': 'Johnson & Johnson (强生)', 'keywords': ['johnson', 'jnj', 'qiangsheng', '强生']},
+    {'symbol': '600276.SS', 'name': 'Jiangsu Hengrui (恒瑞医药)', 'keywords': ['hengrui', 'hengruiyiyao', '恒瑞']},
+]
 
 @st.cache_data(ttl=3600)
 def smart_search_ticker(query: str) -> List[Dict]:
     """
     智能搜索股票代码
-    支持中文/英文公司名称、股票代码
+    支持中文/英文/拼音/模糊匹配
     """
     results = []
+    original_query = query
+    query_lower = query.lower().strip()
     
+    # ========== 第一步：拼音映射转换 ==========
+    if query_lower in COMPANY_NAME_MAP:
+        query = COMPANY_NAME_MAP[query_lower]
+    
+    # ========== 第二步：模糊匹配映射表 ==========
+    if not results:
+        close_matches = difflib.get_close_matches(
+            query_lower, 
+            COMPANY_NAME_MAP.keys(), 
+            n=1, 
+            cutoff=0.6
+        )
+        if close_matches:
+            matched_key = close_matches[0]
+            query = COMPANY_NAME_MAP[matched_key]
+    
+    # ========== 第三步：关键词匹配热门公司 ==========
+    for company in POPULAR_BIOTECH_SEARCH:
+        if any(keyword in query_lower for keyword in company['keywords']):
+            try:
+                ticker = yf.Ticker(company['symbol'])
+                info = ticker.info
+                if 'symbol' in info:
+                    results.append({
+                        'symbol': company['symbol'],
+                        'name': company['name'],
+                        'exchange': info.get('exchange', 'NASDAQ'),
+                        'type': 'Stock'
+                    })
+            except:
+                pass
+    
+    # ========== 第四步：Yahoo Finance API 搜索 ==========
     try:
-        # 方法1: 使用 yfinance 的搜索功能
-        import yfinance as yf
-        
         # 尝试直接作为 ticker 查询
         try:
             ticker = yf.Ticker(query.upper())
             info = ticker.info
             if 'symbol' in info and info.get('regularMarketPrice'):
-                results.append({
-                    'symbol': info['symbol'],
-                    'name': info.get('longName', info.get('shortName', query)),
-                    'exchange': info.get('exchange', 'N/A'),
-                    'type': info.get('quoteType', 'Stock')
-                })
+                symbol = info['symbol']
+                if not any(r['symbol'] == symbol for r in results):
+                    results.append({
+                        'symbol': symbol,
+                        'name': info.get('longName', info.get('shortName', query)),
+                        'exchange': info.get('exchange', 'N/A'),
+                        'type': info.get('quoteType', 'Stock')
+                    })
         except:
             pass
         
-        # 方法2: 使用 Yahoo Finance Search API
-        search_url = f"https://query2.finance.yahoo.com/v1/finance/search"
+        # Yahoo Finance Search API
+        search_url = "https://query2.finance.yahoo.com/v1/finance/search"
         params = {
             'q': query,
             'quotesCount': 10,
             'newsCount': 0,
-            'enableFuzzyQuery': False,
+            'enableFuzzyQuery': True,
             'quotesQueryId': 'tss_match_phrase_query'
         }
         
@@ -559,7 +660,6 @@ def smart_search_ticker(query: str) -> List[Dict]:
             quotes = data.get('quotes', [])
             
             for quote in quotes:
-                # 过滤：只保留股票类型
                 if quote.get('quoteType') in ['EQUITY', 'ETF']:
                     symbol = quote.get('symbol', '')
                     name = quote.get('longname') or quote.get('shortname', '')
@@ -573,20 +673,35 @@ def smart_search_ticker(query: str) -> List[Dict]:
                             'type': quote.get('quoteType', 'Stock')
                         })
         
-        # 针对中文搜索优化（恒瑞医药的例子）
-        if '恒瑞' in query or 'hengrui' in query.lower():
-            # 恒瑞医药的主要上市代码
-            hengrui_codes = [
-                {'symbol': '600276.SS', 'name': 'Jiangsu Hengrui Medicine (A股)', 'exchange': 'Shanghai', 'type': 'Stock'},
-            ]
-            for code in hengrui_codes:
-                if not any(r['symbol'] == code['symbol'] for r in results):
-                    results.insert(0, code)  # 优先显示
+        # ========== 第五步：优先显示主要上市地 ==========
+        priority_exchanges = ['NASDAQ', 'NYSE', 'SHH', 'HKG']
+        results.sort(key=lambda x: (
+            0 if x['exchange'] in priority_exchanges else 1,
+            x['exchange']
+        ))
         
-        return results[:10]  # 最多返回10个结果
+        # 去除重复的多地上市股票（保留主要市场）
+        seen_names = {}
+        filtered_results = []
+        for r in results:
+            base_name = r['name'].split('(')[0].strip()
+            if base_name not in seen_names:
+                seen_names[base_name] = True
+                filtered_results.append(r)
+            elif r['exchange'] in priority_exchanges[:2]:  # NASDAQ/NYSE 优先
+                filtered_results.append(r)
+        
+        return filtered_results[:8]
         
     except Exception as e:
-        return []
+        if not results:
+            return [
+                {'symbol': item['symbol'], 'name': item['name'], 
+                 'exchange': 'NASDAQ', 'type': 'Stock'}
+                for item in POPULAR_BIOTECH_SEARCH[:5]
+            ]
+        return results
+
 
 def calculate_rsi(data, period=14):
     delta = data.diff()
