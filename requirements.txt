@@ -6,4 +6,5 @@ plotly
 python-dotenv
 requests
 openpyxl
+openai
 
