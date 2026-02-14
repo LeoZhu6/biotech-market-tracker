@@ -2,8 +2,9 @@ streamlit
 yfinance
 pandas
 numpy
+matplotlib
+seaborn
 plotly
-openai
-python-dotenv
-reportlab
 requests
+pypinyin
+deep-translator
