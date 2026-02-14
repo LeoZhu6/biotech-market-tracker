@@ -878,44 +878,46 @@ with col_time3:
         st.rerun()
 
 # ==================== 侧边栏 ====================
-tab1, tab2, tab3 = st.tabs(["Smart Search", "Price Alerts", "Saved Lists"])
-
-with tab1:
-    st.markdown("**Smart Search**")
-    st.caption("Search by company name or ticker symbol")
+with st.sidebar:
+    st.markdown("### Control Panel")
     
-    # 搜索输入框
-    search_query = st.text_input(
-        "Search stocks",
-        placeholder="e.g., Hengrui, Pfizer, 恒瑞医药, MRNA",
-        label_visibility="collapsed",
-        key="search_input"
-    )
-    
-    # 搜索结果容器
-    if search_query and len(search_query) >= 2:
-        with st.spinner('Searching...'):
-            search_results = smart_search_ticker(search_query)
-            
-            if search_results:
-                st.success(f"Found {len(search_results)} results:")
+    tab1, tab2, tab3 = st.tabs(["Selection", "Alerts", "Favorites"])   
+    with tab1:
+        st.markdown("**Smart Search**")
+        st.caption("Search by company name or ticker symbol")
+        
+        # 搜索输入框
+        search_query = st.text_input(
+            "Search stocks",
+            placeholder="e.g., Hengrui, Pfizer, 恒瑞医药, MRNA",
+            label_visibility="collapsed",
+            key="search_input"
+        )
+        
+        # 搜索结果容器
+        if search_query and len(search_query) >= 2:
+            with st.spinner('Searching...'):
+                search_results = smart_search_ticker(search_query)
                 
-                # 显示搜索结果（可选择）
-                for result in search_results[:5]:  # 最多显示5个结果
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.caption(f"**{result['symbol']}** - {result['name']}")
-                        st.caption(f" {result['exchange']} | {result['type']}")
-                    with col2:
-                        if st.button("Add", key=f"add_{result['symbol']}", use_container_width=True):
-                            # 添加到自定义列表
-                            if result['symbol'] not in st.session_state.custom_tickers:
-                                st.session_state.custom_tickers.append(result['symbol'])
-                                TICKER_MAP[result['symbol']] = f"{result['symbol']} ({result['name']})"
-                                st.success(f"Added {result['symbol']}")
-                                st.rerun()
-            else:
-                st.warning("No results found. Try different keywords.")
+                if search_results:
+                    st.success(f"Found {len(search_results)} results:")
+                    
+                    # 显示搜索结果（可选择）
+                    for result in search_results[:5]:  # 最多显示5个结果
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.caption(f"**{result['symbol']}** - {result['name']}")
+                            st.caption(f" {result['exchange']} | {result['type']}")
+                        with col2:
+                            if st.button("Add", key=f"add_{result['symbol']}", use_container_width=True):
+                                # 添加到自定义列表
+                                if result['symbol'] not in st.session_state.custom_tickers:
+                                    st.session_state.custom_tickers.append(result['symbol'])
+                                    TICKER_MAP[result['symbol']] = f"{result['symbol']} ({result['name']})"
+                                    st.success(f"Added {result['symbol']}")
+                                    st.rerun()
+                else:
+                    st.warning("No results found. Try different keywords.")
 
         
         st.markdown("---")
