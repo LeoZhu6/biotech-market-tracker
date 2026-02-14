@@ -512,135 +512,106 @@ def validate_and_get_name(ticker):
 import requests
 from typing import List, Dict
 import difflib
+from pypinyin import lazy_pinyin
+from deep_translator import GoogleTranslator
 
-# ========== 新增：中英文映射表 ==========
-COMPANY_NAME_MAP = {
-    # 中文拼音 -> 英文名称
-    'huirui': 'Pfizer',
-    'hengrui': 'Jiangsu Hengrui',
-    'hengruiyiyao': 'Jiangsu Hengrui',
-    'modena': 'Moderna',
-    'modena': 'Moderna',
-    'jilide': 'Gilead',
-    'zaisheng': 'Regeneron',
-    'futai': 'Vertex',
-    'anjin': 'Amgen',
-    'nuohe': 'Novo Nordisk',
-    'nuohenuode': 'Novo Nordisk',
-    'lili': 'Eli Lilly',
-    'lilai': 'Eli Lilly',
-    'lilly': 'Eli Lilly',
-    'astrazeneca': 'AstraZeneca',
-    'azn': 'AstraZeneca',
-    'johnson': 'Johnson & Johnson',
-    'jnj': 'Johnson & Johnson',
-    'qiangsheng': 'Johnson & Johnson',
-    'biontech': 'BioNTech',
-    'baiao': 'BioNTech',
-    'sanofi': 'Sanofi',
-    'sainuofi': 'Sanofi',
-    'roche': 'Roche',
-    'luoshi': 'Roche',
-    'novartis': 'Novartis',
-    'nuohuashi': 'Novartis',
-    'abbvie': 'AbbVie',
-    'aibeiwei': 'AbbVie',
-    'merck': 'Merck',
-    'moshade': 'Merck',
-    'gsk': 'GlaxoSmithKline',
-    'gelanksu': 'GlaxoSmithKline',
-    'bristol': 'Bristol Myers Squibb',
-    'baimei': 'Bristol Myers Squibb',
-    'takeda': 'Takeda',
-    'wutian': 'Takeda',
-    
-    # 常见错误拼写
-    'pfizer': 'Pfizer',
-    'phizer': 'Pfizer',
-    'pifzer': 'Pfizer',
-    'moderna': 'Moderna',
-    'moderan': 'Moderna',
-    'gilead': 'Gilead',
-    'giliead': 'Gilead',
-}
 
-# ========== 新增：热门生物医药公司 ==========
-POPULAR_BIOTECH_SEARCH = [
-    {'symbol': 'PFE', 'name': 'Pfizer (辉瑞)', 'keywords': ['pfizer', 'huirui', '辉瑞']},
-    {'symbol': 'MRNA', 'name': 'Moderna (莫德纳)', 'keywords': ['moderna', 'modena', '莫德纳']},
-    {'symbol': 'GILD', 'name': 'Gilead Sciences (吉利德)', 'keywords': ['gilead', 'jilide', '吉利德']},
-    {'symbol': 'REGN', 'name': 'Regeneron (再生元)', 'keywords': ['regeneron', 'zaisheng', '再生元']},
-    {'symbol': 'VRTX', 'name': 'Vertex (福泰)', 'keywords': ['vertex', 'futai', '福泰']},
-    {'symbol': 'AMGN', 'name': 'Amgen (安进)', 'keywords': ['amgen', 'anjin', '安进']},
-    {'symbol': 'LLY', 'name': 'Eli Lilly (礼来)', 'keywords': ['lilly', 'lili', 'lilai', '礼来']},
-    {'symbol': 'NVO', 'name': 'Novo Nordisk (诺和诺德)', 'keywords': ['novo', 'nuohe', '诺和']},
-    {'symbol': 'BNTX', 'name': 'BioNTech (拜恩泰科)', 'keywords': ['biontech', 'baiao', '拜恩']},
-    {'symbol': 'JNJ', 'name': 'Johnson & Johnson (强生)', 'keywords': ['johnson', 'jnj', 'qiangsheng', '强生']},
-    {'symbol': '600276.SS', 'name': 'Jiangsu Hengrui (恒瑞医药)', 'keywords': ['hengrui', 'hengruiyiyao', '恒瑞']},
-]
-
+# ========== 核心搜索引擎 ==========
 @st.cache_data(ttl=3600)
 def smart_search_ticker(query: str) -> List[Dict]:
     """
-    智能搜索股票代码
-    支持中文/英文/拼音/模糊匹配
+    多源智能搜索引擎
+    支持：中文、英文、拼音、模糊匹配
     """
     results = []
-    original_query = query
-    query_lower = query.lower().strip()
+    original_query = query.strip()
+    query_lower = original_query.lower()
     
-    # ========== 第一步：拼音映射转换 ==========
-    if query_lower in COMPANY_NAME_MAP:
-        query = COMPANY_NAME_MAP[query_lower]
+    # ========== 第一步：检测语言并转换 ==========
+    search_queries = [original_query]  # 原始查询
     
-    # ========== 第二步：模糊匹配映射表 ==========
-    if not results:
-        close_matches = difflib.get_close_matches(
-            query_lower, 
-            COMPANY_NAME_MAP.keys(), 
-            n=1, 
-            cutoff=0.6
-        )
-        if close_matches:
-            matched_key = close_matches[0]
-            query = COMPANY_NAME_MAP[matched_key]
-    
-    # ========== 第三步：关键词匹配热门公司 ==========
-    for company in POPULAR_BIOTECH_SEARCH:
-        if any(keyword in query_lower for keyword in company['keywords']):
-            try:
-                ticker = yf.Ticker(company['symbol'])
-                info = ticker.info
-                if 'symbol' in info:
-                    results.append({
-                        'symbol': company['symbol'],
-                        'name': company['name'],
-                        'exchange': info.get('exchange', 'NASDAQ'),
-                        'type': 'Stock'
-                    })
-            except:
-                pass
-    
-    # ========== 第四步：Yahoo Finance API 搜索 ==========
-    try:
-        # 尝试直接作为 ticker 查询
+    # 如果包含中文，尝试翻译
+    if any('\u4e00' <= char <= '\u9fff' for char in original_query):
         try:
-            ticker = yf.Ticker(query.upper())
-            info = ticker.info
-            if 'symbol' in info and info.get('regularMarketPrice'):
-                symbol = info['symbol']
-                if not any(r['symbol'] == symbol for r in results):
-                    results.append({
-                        'symbol': symbol,
-                        'name': info.get('longName', info.get('shortName', query)),
-                        'exchange': info.get('exchange', 'N/A'),
-                        'type': info.get('quoteType', 'Stock')
-                    })
+            # 方法1：Google 翻译
+            translated_text = GoogleTranslator(source='zh-CN', target='en').translate(original_query)
+            if translated_text:
+                search_queries.append(translated_text)
+                st.info(f"💡 自动翻译：'{original_query}' → '{translated_text}'")
         except:
             pass
+
         
-        # Yahoo Finance Search API
-        search_url = "https://query2.finance.yahoo.com/v1/finance/search"
+        # 方法2：拼音转换（作为备用）
+        pinyin_query = ''.join(lazy_pinyin(original_query))
+        if pinyin_query != original_query:
+            search_queries.append(pinyin_query)
+    
+    # 如果是拼音，尝试常见映射
+    elif query_lower.isalpha() and len(query_lower) > 3:
+        # 快速映射常见公司（保留少量高频词）
+        quick_map = {
+            'huirui': 'Pfizer',
+            'hengrui': 'Jiangsu Hengrui',
+            'sansheng': 'Sunshine Guojian',  # 三生制药
+            'sanshengzhiyao': 'Sunshine Guojian',
+            'modena': 'Moderna',
+            'jilide': 'Gilead',
+        }
+        if query_lower in quick_map:
+            search_queries.append(quick_map[query_lower])
+    
+    # ========== 第二步：多源搜索 ==========
+    for search_term in search_queries:
+        # 来源1：Yahoo Finance 主搜索
+        yahoo_results = search_yahoo_finance(search_term)
+        results.extend(yahoo_results)
+        
+        # 来源2：直接 Ticker 查询
+        direct_result = search_direct_ticker(search_term)
+        if direct_result:
+            results.append(direct_result)
+        
+        # 来源3：A股/港股特殊处理
+        if any('\u4e00' <= char <= '\u9fff' for char in original_query):
+            cn_results = search_chinese_stocks(original_query)
+            results.extend(cn_results)
+    
+    # ========== 第三步：去重与排序 ==========
+    # 去重（基于 symbol）
+    seen = set()
+    unique_results = []
+    for r in results:
+        if r['symbol'] not in seen:
+            seen.add(r['symbol'])
+            unique_results.append(r)
+    
+    # 排序：主要市场优先
+    priority_exchanges = ['NASDAQ', 'NYSE', 'SSE', 'SZSE', 'HKEX', 'SHH', 'HKG']
+    unique_results.sort(key=lambda x: (
+        0 if x['exchange'] in priority_exchanges else 1,
+        -len(x['name'])  # 名称越长越详细，优先级越高
+    ))
+    
+    # 过滤多地上市重复（只保留主要市场）
+    filtered = []
+    seen_names = set()
+    for r in unique_results:
+        base_name = r['name'].split('(')[0].split('-')[0].strip().lower()
+        # 如果是主要市场或者名称未见过，则保留
+        if r['exchange'] in priority_exchanges[:5] or base_name not in seen_names:
+            filtered.append(r)
+            seen_names.add(base_name)
+    
+    return filtered[:8]  # 最多返回8个结果
+
+
+# ========== 辅助函数1：Yahoo Finance 搜索 ==========
+def search_yahoo_finance(query: str) -> List[Dict]:
+    """Yahoo Finance API 搜索"""
+    results = []
+    try:
+        url = "https://query2.finance.yahoo.com/v1/finance/search"
         params = {
             'q': query,
             'quotesCount': 10,
@@ -648,12 +619,11 @@ def smart_search_ticker(query: str) -> List[Dict]:
             'enableFuzzyQuery': True,
             'quotesQueryId': 'tss_match_phrase_query'
         }
-        
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        response = requests.get(search_url, params=params, headers=headers, timeout=5)
+        response = requests.get(url, params=params, headers=headers, timeout=5)
         
         if response.status_code == 200:
             data = response.json()
@@ -661,46 +631,130 @@ def smart_search_ticker(query: str) -> List[Dict]:
             
             for quote in quotes:
                 if quote.get('quoteType') in ['EQUITY', 'ETF']:
-                    symbol = quote.get('symbol', '')
-                    name = quote.get('longname') or quote.get('shortname', '')
+                    results.append({
+                        'symbol': quote.get('symbol', ''),
+                        'name': quote.get('longname') or quote.get('shortname', ''),
+                        'exchange': quote.get('exchange', 'N/A'),
+                        'type': quote.get('quoteType', 'Stock')
+                    })
+    except:
+        pass
+    
+    return results
+
+
+# ========== 辅助函数2：直接 Ticker 查询 ==========
+def search_direct_ticker(query: str) -> Dict:
+    """尝试直接作为股票代码查询"""
+    try:
+        ticker = yf.Ticker(query.upper())
+        info = ticker.info
+        
+        if 'symbol' in info and info.get('regularMarketPrice'):
+            return {
+                'symbol': info['symbol'],
+                'name': info.get('longName', info.get('shortName', query)),
+                'exchange': info.get('exchange', 'N/A'),
+                'type': info.get('quoteType', 'Stock')
+            }
+    except:
+        pass
+    
+    return None
+
+
+# ========== 辅助函数3：中文股票特殊搜索 ==========
+def search_chinese_stocks(query: str) -> List[Dict]:
+    """
+    针对A股/港股的特殊搜索
+    使用东方财富/新浪财经 API
+    """
+    results = []
+    
+    # 方法1：东方财富搜索 API
+    try:
+        url = "https://searchapi.eastmoney.com/api/suggest/get"
+        params = {
+            'input': query,
+            'type': '14',  # 14=股票
+            'token': 'D43BF722C8E33BDC906FB84D85E326E8',
+            'count': 5
+        }
+        
+        response = requests.get(url, params=params, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('QuotationCodeTable', {}).get('Data'):
+                for item in data['QuotationCodeTable']['Data']:
+                    code = item.get('Code', '')
+                    name = item.get('Name', '')
+                    market_code = item.get('MktNum', '')
                     
-                    # 避免重复
-                    if not any(r['symbol'] == symbol for r in results):
-                        results.append({
-                            'symbol': symbol,
-                            'name': name,
-                            'exchange': quote.get('exchange', 'N/A'),
-                            'type': quote.get('quoteType', 'Stock')
-                        })
-        
-        # ========== 第五步：优先显示主要上市地 ==========
-        priority_exchanges = ['NASDAQ', 'NYSE', 'SHH', 'HKG']
-        results.sort(key=lambda x: (
-            0 if x['exchange'] in priority_exchanges else 1,
-            x['exchange']
-        ))
-        
-        # 去除重复的多地上市股票（保留主要市场）
-        seen_names = {}
-        filtered_results = []
-        for r in results:
-            base_name = r['name'].split('(')[0].strip()
-            if base_name not in seen_names:
-                seen_names[base_name] = True
-                filtered_results.append(r)
-            elif r['exchange'] in priority_exchanges[:2]:  # NASDAQ/NYSE 优先
-                filtered_results.append(r)
-        
-        return filtered_results[:8]
-        
-    except Exception as e:
-        if not results:
-            return [
-                {'symbol': item['symbol'], 'name': item['name'], 
-                 'exchange': 'NASDAQ', 'type': 'Stock'}
-                for item in POPULAR_BIOTECH_SEARCH[:5]
-            ]
-        return results
+                    # 转换为 Yahoo Finance 格式
+                    if market_code == '1':  # 上海
+                        symbol = f"{code}.SS"
+                        exchange = 'SSE'
+                    elif market_code == '0':  # 深圳
+                        symbol = f"{code}.SZ"
+                        exchange = 'SZSE'
+                    elif market_code == '116':  # 香港
+                        symbol = f"{code}.HK"
+                        exchange = 'HKEX'
+                    else:
+                        continue
+                    
+                    results.append({
+                        'symbol': symbol,
+                        'name': f"{name} ({code})",
+                        'exchange': exchange,
+                        'type': 'Stock'
+                    })
+    except:
+        pass
+    
+    # 方法2：新浪财经搜索（备用）
+    if not results:
+        try:
+            url = "https://suggest3.sinajs.cn/suggest/type=&key=" + query
+            response = requests.get(url, timeout=5)
+            
+            if response.status_code == 200:
+                # 解析新浪返回的数据格式
+                content = response.text
+                if 'var suggestvalue=' in content:
+                    data_str = content.split('var suggestvalue="')[1].split('";')[0]
+                    items = data_str.split(';')
+                    
+                    for item in items[:5]:
+                        parts = item.split(',')
+                        if len(parts) >= 6:
+                            code = parts[3]
+                            name = parts[4]
+                            market = parts[0]
+                            
+                            if market == 'sh':
+                                symbol = f"{code}.SS"
+                                exchange = 'SSE'
+                            elif market == 'sz':
+                                symbol = f"{code}.SZ"
+                                exchange = 'SZSE'
+                            elif market == 'hk':
+                                symbol = f"{code}.HK"
+                                exchange = 'HKEX'
+                            else:
+                                continue
+                            
+                            results.append({
+                                'symbol': symbol,
+                                'name': f"{name} ({code})",
+                                'exchange': exchange,
+                                'type': 'Stock'
+                            })
+        except:
+            pass
+    
+    return results
 
 
 def calculate_rsi(data, period=14):
