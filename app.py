@@ -509,6 +509,85 @@ def validate_and_get_name(ticker):
     except:
         return False, None
 
+import requests
+from typing import List, Dict
+
+@st.cache_data(ttl=3600)
+def smart_search_ticker(query: str) -> List[Dict]:
+    """
+    智能搜索股票代码
+    支持中文/英文公司名称、股票代码
+    """
+    results = []
+    
+    try:
+        # 方法1: 使用 yfinance 的搜索功能
+        import yfinance as yf
+        
+        # 尝试直接作为 ticker 查询
+        try:
+            ticker = yf.Ticker(query.upper())
+            info = ticker.info
+            if 'symbol' in info and info.get('regularMarketPrice'):
+                results.append({
+                    'symbol': info['symbol'],
+                    'name': info.get('longName', info.get('shortName', query)),
+                    'exchange': info.get('exchange', 'N/A'),
+                    'type': info.get('quoteType', 'Stock')
+                })
+        except:
+            pass
+        
+        # 方法2: 使用 Yahoo Finance Search API
+        search_url = f"https://query2.finance.yahoo.com/v1/finance/search"
+        params = {
+            'q': query,
+            'quotesCount': 10,
+            'newsCount': 0,
+            'enableFuzzyQuery': False,
+            'quotesQueryId': 'tss_match_phrase_query'
+        }
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(search_url, params=params, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            quotes = data.get('quotes', [])
+            
+            for quote in quotes:
+                # 过滤：只保留股票类型
+                if quote.get('quoteType') in ['EQUITY', 'ETF']:
+                    symbol = quote.get('symbol', '')
+                    name = quote.get('longname') or quote.get('shortname', '')
+                    
+                    # 避免重复
+                    if not any(r['symbol'] == symbol for r in results):
+                        results.append({
+                            'symbol': symbol,
+                            'name': name,
+                            'exchange': quote.get('exchange', 'N/A'),
+                            'type': quote.get('quoteType', 'Stock')
+                        })
+        
+        # 针对中文搜索优化（恒瑞医药的例子）
+        if '恒瑞' in query or 'hengrui' in query.lower():
+            # 恒瑞医药的主要上市代码
+            hengrui_codes = [
+                {'symbol': '600276.SS', 'name': 'Jiangsu Hengrui Medicine (A股)', 'exchange': 'Shanghai', 'type': 'Stock'},
+            ]
+            for code in hengrui_codes:
+                if not any(r['symbol'] == code['symbol'] for r in results):
+                    results.insert(0, code)  # 优先显示
+        
+        return results[:10]  # 最多返回10个结果
+        
+    except Exception as e:
+        return []
+
 def calculate_rsi(data, period=14):
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
@@ -799,44 +878,43 @@ with col_time3:
         st.rerun()
 
 # ==================== 侧边栏 ====================
-with st.sidebar:
-    st.markdown("### Control Panel")
+with tab1:
+    st.markdown("**Smart Search**")
+    st.caption("Search by company name or ticker symbol")
     
-    tab1, tab2, tab3 = st.tabs(["Selection", "Alerts", "Favorites"])
+    # 搜索输入框
+    search_query = st.text_input(
+        "Search stocks",
+        placeholder="e.g., Hengrui, Pfizer, 恒瑞医药, MRNA",
+        label_visibility="collapsed",
+        key="search_input"
+    )
     
-    with tab1:
-        st.markdown("**Custom Search**")
-        st.caption("Enter ticker symbols (comma-separated)")
-        
-        custom_input = st.text_input(
-            "Ticker codes",
-            placeholder="e.g., BNTX, CRSP, BEAM",
-            label_visibility="collapsed",
-            key="custom_input"
-        )
-        
-        custom_tickers = []
-        invalid_tickers = []
-        
-        if custom_input:
-            raw_tickers = [t.strip().upper() for t in custom_input.split(',') if t.strip()]
+    # 搜索结果容器
+    if search_query and len(search_query) >= 2:
+        with st.spinner('Searching...'):
+            search_results = smart_search_ticker(search_query)
             
-            with st.spinner('Validating...'):
-                for ticker in raw_tickers:
-                    is_valid, full_name = validate_and_get_name(ticker)
-                    if is_valid:
-                        custom_tickers.append(ticker)
-                        if ticker not in TICKER_MAP:
-                            TICKER_MAP[ticker] = f"{ticker} ({full_name})"
-                    else:
-                        invalid_tickers.append(ticker)
-            
-            if custom_tickers:
-                st.success(f"Valid: {', '.join(custom_tickers)}")
-            if invalid_tickers:
-                st.error(f"Invalid: {', '.join(invalid_tickers)}")
-        
-        st.session_state.custom_tickers = custom_tickers
+            if search_results:
+                st.success(f"Found {len(search_results)} results:")
+                
+                # 显示搜索结果（可选择）
+                for result in search_results[:5]:  # 最多显示5个结果
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.caption(f"**{result['symbol']}** - {result['name']}")
+                        st.caption(f" {result['exchange']} | {result['type']}")
+                    with col2:
+                        if st.button("Add", key=f"add_{result['symbol']}", use_container_width=True):
+                            # 添加到自定义列表
+                            if result['symbol'] not in st.session_state.custom_tickers:
+                                st.session_state.custom_tickers.append(result['symbol'])
+                                TICKER_MAP[result['symbol']] = f"{result['symbol']} ({result['name']})"
+                                st.success(f"Added {result['symbol']}")
+                                st.rerun()
+            else:
+                st.warning("No results found. Try different keywords.")
+
         
         st.markdown("---")
         

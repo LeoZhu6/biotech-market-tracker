@@ -3,8 +3,7 @@ yfinance
 pandas
 numpy
 plotly
-python-dotenv
-requests
-openpyxl
 openai
+python-dotenv
 reportlab
+requests
