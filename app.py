@@ -878,6 +878,8 @@ with col_time3:
         st.rerun()
 
 # ==================== 侧边栏 ====================
+tab1, tab2, tab3 = st.tabs(["Smart Search", "Price Alerts", "Saved Lists"])
+
 with tab1:
     st.markdown("**Smart Search**")
     st.caption("Search by company name or ticker symbol")
