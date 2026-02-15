@@ -10,3 +10,4 @@ pypinyin
 deep-translator
 python-dotenv
 openai
+reportlab
