@@ -11,3 +11,4 @@ deep-translator
 python-dotenv
 openai
 reportlab
+googlesearch-python
