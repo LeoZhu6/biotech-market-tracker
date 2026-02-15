@@ -806,6 +806,54 @@ def get_data(user_tickers, period):
     returns = df_close.pct_change().dropna()
     return df_close, returns
 
+# ========== 新增：获取公司信息和新闻 ==========
+@st.cache_data(ttl=1800)  # 缓存30分钟
+def get_company_info_and_news(ticker):
+    """获取公司官网和最新新闻"""
+    try:
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        
+        # 获取官网
+        website = info.get('website', '')
+        company_name = info.get('longName', info.get('shortName', ticker))
+        
+        # 获取最新新闻（yfinance 内置）
+        news = stock.news[:5] if hasattr(stock, 'news') and stock.news else []
+        
+        return {
+            'name': company_name,
+            'website': website,
+            'news': news
+        }
+    except Exception as e:
+        return {
+            'name': ticker,
+            'website': '',
+            'news': []
+        }
+
+def search_google_news(company_name, ticker):
+    """备用：Google News 搜索（如果 yfinance 新闻不足）"""
+    try:
+        from googlesearch import search
+        query = f"{company_name} {ticker} stock news"
+        results = []
+        
+        for url in search(query, num_results=5, lang='en'):
+            # 过滤权威财经媒体
+            if any(domain in url for domain in ['reuters.com', 'bloomberg.com', 'cnbc.com', 
+                                                  'wsj.com', 'ft.com', 'marketwatch.com',
+                                                  'seekingalpha.com', 'fool.com']):
+                results.append(url)
+                if len(results) >= 5:
+                    break
+        
+        return results
+    except:
+        return []
+
+
 def get_deepseek_analysis(metrics_df, period):
     api_key = DEEPSEEK_API_KEY
     if not api_key:
@@ -1251,7 +1299,54 @@ if should_show_analysis:
                             f'({type_text} target ${alert["target"]:.2f})</div>',
                             unsafe_allow_html=True
                         )
+                # ========== 新增：公司情报板块 ==========
+                st.markdown('<div class="section-title">📰 Company Intelligence & Latest News</div>', unsafe_allow_html=True)
+                st.caption("Official websites and recent coverage from authoritative sources")
+                
+                # 使用 expander 让界面更整洁
+                for ticker in tickers:
+                    with st.expander(f"🔍 {TICKER_MAP.get(ticker, ticker)}", expanded=False):
+                        company_data = get_company_info_and_news(ticker)
                         
+                        col_info1, col_info2 = st.columns([1, 2])
+                        
+                        with col_info1:
+                            st.markdown("**🌐 Official Website**")
+                            if company_data['website']:
+                                st.markdown(f"[{company_data['website']}]({company_data['website']})")
+                            else:
+                                st.caption("Not available")
+                        
+                        with col_info2:
+                            st.markdown("**📰 Latest News & Analysis**")
+                            
+                            if company_data['news']:
+                                for idx, article in enumerate(company_data['news'][:5], 1):
+                                    # yfinance 新闻格式
+                                    title = article.get('title', 'News Article')
+                                    link = article.get('link', '')
+                                    publisher = article.get('publisher', 'Source')
+                                    
+                                    if link:
+                                        st.markdown(
+                                            f"{idx}. [{title}]({link}) - *{publisher}*",
+                                            unsafe_allow_html=True
+                                        )
+                            else:
+                                # 备用：尝试 Google News 搜索
+                                st.caption("Searching alternative sources...")
+                                backup_news = search_google_news(company_data['name'], ticker)
+                                
+                                if backup_news:
+                                    for idx, url in enumerate(backup_news, 1):
+                                        domain = url.split('/')[2].replace('www.', '')
+                                        st.markdown(f"{idx}. [Article from {domain}]({url})")
+                                else:
+                                    st.caption("No recent news found")
+                
+                st.markdown("---")
+                # ========================================
+
                 st.markdown('<div class="section-title">Real-Time Prices</div>', unsafe_allow_html=True)
                 
                 cols = st.columns(min(len(tickers), 4))
