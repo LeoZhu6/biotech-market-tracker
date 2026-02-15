@@ -496,182 +496,210 @@ if 'preset_tickers' not in st.session_state:
 
 from typing import Dict, List  
 
-# ========== 新增：获取公司信息和新闻 ==========
-@st.cache_data(ttl=1800)
+# ========== 新增：获取公司信息和新闻（优化版）==========
+@st.cache_data(ttl=1800, show_spinner=False)
 def get_company_info_and_news(ticker: str) -> Dict:
     """
-    获取公司官网和最新新闻
+    获取公司官网和最新新闻（增强错误处理）
     """
+    result = {
+        'website': '',
+        'description': '',
+        'news': [],
+        'sector': 'N/A',
+        'industry': 'N/A',
+        'error': None
+    }
+    
     try:
         stock = yf.Ticker(ticker)
         info = stock.info
         
-        # 获取官网
-        website = info.get('website', '')
+        # 获取基本信息
+        result['website'] = info.get('website', '')
+        result['sector'] = info.get('sector', 'N/A')
+        result['industry'] = info.get('industry', 'N/A')
         
         # 获取公司简介
-        description = info.get('longBusinessSummary', '')[:200] + '...' if info.get('longBusinessSummary') else ''
+        summary = info.get('longBusinessSummary', '')
+        if summary:
+            result['description'] = summary[:200] + '...' if len(summary) > 200 else summary
         
-        # 获取最新新闻（Yahoo Finance 自带）
-        news = []
+        # 获取最新新闻（增强错误处理）
         try:
-            news_data = stock.news[:5]  # 获取最新5条
-            for item in news_data:
-                news.append({
-                    'title': item.get('title', ''),
-                    'publisher': item.get('publisher', 'Unknown'),
-                    'link': item.get('link', ''),
-                    'published': datetime.fromtimestamp(item.get('providerPublishTime', 0)).strftime('%Y-%m-%d %H:%M') if item.get('providerPublishTime') else ''
-                })
-        except:
-            pass
-        
-        return {
-            'website': website,
-            'description': description,
-            'news': news,
-            'sector': info.get('sector', 'N/A'),
-            'industry': info.get('industry', 'N/A')
-        }
+            if hasattr(stock, 'news') and stock.news:
+                for item in stock.news[:5]:
+                    try:
+                        news_item = {
+                            'title': item.get('title', 'No title'),
+                            'publisher': item.get('publisher', 'Unknown'),
+                            'link': item.get('link', ''),
+                            'published': ''
+                        }
+                        
+                        # 处理时间戳
+                        timestamp = item.get('providerPublishTime', 0)
+                        if timestamp:
+                            try:
+                                news_item['published'] = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M')
+                            except:
+                                news_item['published'] = 'Recent'
+                        
+                        if news_item['link']:  # 只添加有链接的新闻
+                            result['news'].append(news_item)
+                    except Exception as e:
+                        continue  # 跳过有问题的新闻项
+        except Exception as e:
+            result['error'] = f"News fetch error: {str(e)}"
+    
     except Exception as e:
-        return {
-            'website': '',
-            'description': '',
-            'news': [],
-            'sector': 'N/A',
-            'industry': 'N/A'
-        }
+        result['error'] = f"Data fetch error: {str(e)}"
+    
+    return result
+
 
 def display_extended_reading(selected_tickers: List[str]):
     """
-    显示延伸阅读板块
+    显示延伸阅读板块（优化版）
     """
-    st.markdown('<div class="section-title"> 延伸阅读 (Extended Reading)</div>', unsafe_allow_html=True)
-    
-    # 为每个公司创建一个标签页
-    if len(selected_tickers) > 1:
-        tabs = st.tabs([f"{ticker}" for ticker in selected_tickers])
-    else:
-        tabs = [st.container()]
-    
-    for idx, ticker in enumerate(selected_tickers):
-        with tabs[idx]:
-            info = get_company_info_and_news(ticker)
-            
-            # 公司基本信息卡片
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); 
-                            padding: 1.2rem; border-radius: 10px; border-left: 4px solid #667eea;">
-                    <h3 style="margin: 0 0 0.5rem 0; color: #333;">{ticker}</h3>
-                    <p style="color: #666; font-size: 0.9rem; margin: 0.3rem 0;">
-                        <strong>Sector:</strong> {info['sector']} | <strong>Industry:</strong> {info['industry']}
-                    </p>
-                    <p style="color: #555; font-size: 0.85rem; margin-top: 0.8rem; line-height: 1.5;">
-                        {info['description']}
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col2:
-                if info['website']:
+    try:
+        st.markdown('<div class="section-title">📰 延伸阅读 (Extended Reading)</div>', unsafe_allow_html=True)
+        
+        # 为每个公司创建标签页
+        if len(selected_tickers) > 1:
+            tabs = st.tabs([f"📊 {ticker}" for ticker in selected_tickers])
+        else:
+            tabs = [st.container()]
+        
+        for idx, ticker in enumerate(selected_tickers):
+            with tabs[idx]:
+                # 获取公司信息
+                with st.spinner(f"Loading {ticker} information..."):
+                    info = get_company_info_and_news(ticker)
+                
+                # 如果有错误，显示简化版本
+                if info['error']:
+                    st.warning(f"⚠️ Unable to fetch complete data for {ticker}: {info['error']}")
+                
+                # === 公司基本信息卡片 ===
+                col1, col2 = st.columns([2, 1])
+                
+                with col1:
                     st.markdown(f"""
-                    <div style="background: white; padding: 1.2rem; border-radius: 10px; 
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
-                        <p style="margin: 0 0 0.8rem 0; color: #666; font-size: 0.9rem;">Official Website</p>
-                        <a href="{info['website']}" target="_blank" 
-                           style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                  color: white; padding: 0.6rem 1.5rem; border-radius: 8px; 
-                                  text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-                            Visit Website
-                        </a>
+                    <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); 
+                                padding: 1.2rem; border-radius: 10px; border-left: 4px solid #667eea;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: #333;">🏢 {ticker}</h3>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0.3rem 0;">
+                            <strong>Sector:</strong> {info['sector']} | <strong>Industry:</strong> {info['industry']}
+                        </p>
+                        <p style="color: #555; font-size: 0.85rem; margin-top: 0.8rem; line-height: 1.5;">
+                            {info['description'] if info['description'] else 'Company description not available.'}
+                        </p>
                     </div>
                     """, unsafe_allow_html=True)
-                else:
-                    st.info("🔍 Official website not available")
-            
-            # 最新新闻
-            st.markdown("---")
-            st.markdown("### Latest News & Reports")
-            
-            if info['news']:
-                for news_item in info['news']:
-                    st.markdown(f"""
-                    <div style="background: white; padding: 1rem; margin: 0.8rem 0; 
-                                border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-                                border-left: 3px solid #43a047;">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
-                                <a href="{news_item['link']}" target="_blank" 
-                                   style="color: #333; font-weight: 600; font-size: 1rem; 
-                                          text-decoration: none; line-height: 1.4;">
-                                    {news_item['title']}
-                                </a>
-                                <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.85rem;">
-                                    <span style="background: #e8f5e9; padding: 0.2rem 0.5rem; 
-                                                 border-radius: 4px; margin-right: 0.5rem;">
-                                        {news_item['publisher']}
-                                    </span>
-                                    {news_item['published']}
-                                </p>
-                            </div>
-                            <a href="{news_item['link']}" target="_blank" 
-                               style="background: #43a047; color: white; padding: 0.4rem 0.8rem;
-                                      border-radius: 6px; text-decoration: none; font-size: 0.85rem;
-                                      white-space: nowrap; margin-left: 1rem;">
-                                Read →
+                
+                with col2:
+                    if info['website']:
+                        st.markdown(f"""
+                        <div style="background: white; padding: 1.2rem; border-radius: 10px; 
+                                    box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+                            <p style="margin: 0 0 0.8rem 0; color: #666; font-size: 0.9rem; font-weight: 600;">Official Website</p>
+                            <a href="{info['website']}" target="_blank" 
+                               style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                      color: white; padding: 0.6rem 1.5rem; border-radius: 8px; 
+                                      text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                                🌐 Visit Website
                             </a>
                         </div>
-                    </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info("🔍 Official website not available")
+                
+                # === 最新新闻 ===
+                st.markdown("---")
+                st.markdown("### 📰 Latest News & Reports")
+                
+                if info['news']:
+                    for news_item in info['news']:
+                        st.markdown(f"""
+                        <div style="background: white; padding: 1rem; margin: 0.8rem 0; 
+                                    border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+                                    border-left: 3px solid #43a047;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <a href="{news_item['link']}" target="_blank" 
+                                       style="color: #333; font-weight: 600; font-size: 1rem; 
+                                              text-decoration: none; line-height: 1.4;">
+                                        {news_item['title']}
+                                    </a>
+                                    <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.85rem;">
+                                        <span style="background: #e8f5e9; padding: 0.2rem 0.5rem; 
+                                                     border-radius: 4px; margin-right: 0.5rem;">
+                                            {news_item['publisher']}
+                                        </span>
+                                        {news_item['published']}
+                                    </p>
+                                </div>
+                                <a href="{news_item['link']}" target="_blank" 
+                                   style="background: #43a047; color: white; padding: 0.4rem 0.8rem;
+                                          border-radius: 6px; text-decoration: none; font-size: 0.85rem;
+                                          white-space: nowrap; margin-left: 1rem; margin-top: 0.5rem;">
+                                    Read →
+                                </a>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.warning("⚠️ No recent news available")
+                
+                # === 额外资源链接 ===
+                st.markdown("---")
+                st.markdown("### 🔗 Additional Resources")
+                
+                col_res1, col_res2, col_res3, col_res4 = st.columns(4)
+                
+                with col_res1:
+                    st.markdown(f"""
+                    <a href="https://finance.yahoo.com/quote/{ticker}" target="_blank"
+                       style="display: block; background: #1e88e5; color: white; padding: 0.8rem;
+                              text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        📊 Yahoo Finance
+                    </a>
                     """, unsafe_allow_html=True)
-            else:
-                st.warning(" No recent news available")
-            
-            # 额外资源链接
-            st.markdown("---")
-            st.markdown("###  Additional Resources")
-            
-            col_res1, col_res2, col_res3, col_res4 = st.columns(4)
-            
-            with col_res1:
-                st.markdown(f"""
-                <a href="https://finance.yahoo.com/quote/{ticker}" target="_blank"
-                   style="display: block; background: #1e88e5; color: white; padding: 0.8rem;
-                          text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                     Yahoo Finance
-                </a>
-                """, unsafe_allow_html=True)
-            
-            with col_res2:
-                st.markdown(f"""
-                <a href="https://www.google.com/finance/quote/{ticker}" target="_blank"
-                   style="display: block; background: #34a853; color: white; padding: 0.8rem;
-                          text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                     Google Finance
-                </a>
-                """, unsafe_allow_html=True)
-            
-            with col_res3:
-                st.markdown(f"""
-                <a href="https://seekingalpha.com/symbol/{ticker}" target="_blank"
-                   style="display: block; background: #ff6f00; color: white; padding: 0.8rem;
-                          text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                     Seeking Alpha
-                </a>
-                """, unsafe_allow_html=True)
-            
-            with col_res4:
-                st.markdown(f"""
-                <a href="https://www.marketwatch.com/investing/stock/{ticker.lower()}" target="_blank"
-                   style="display: block; background: #0288d1; color: white; padding: 0.8rem;
-                          text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                     MarketWatch
-                </a>
-                """, unsafe_allow_html=True)
+                
+                with col_res2:
+                    st.markdown(f"""
+                    <a href="https://www.google.com/finance/quote/{ticker}" target="_blank"
+                       style="display: block; background: #34a853; color: white; padding: 0.8rem;
+                              text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        📈 Google Finance
+                    </a>
+                    """, unsafe_allow_html=True)
+                
+                with col_res3:
+                    st.markdown(f"""
+                    <a href="https://seekingalpha.com/symbol/{ticker}" target="_blank"
+                       style="display: block; background: #ff6f00; color: white; padding: 0.8rem;
+                              text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        📰 Seeking Alpha
+                    </a>
+                    """, unsafe_allow_html=True)
+                
+                with col_res4:
+                    st.markdown(f"""
+                    <a href="https://www.marketwatch.com/investing/stock/{ticker.lower()}" target="_blank"
+                       style="display: block; background: #0288d1; color: white; padding: 0.8rem;
+                              text-align: center; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        📉 MarketWatch
+                    </a>
+                    """, unsafe_allow_html=True)
+        
+        st.markdown("---")
     
-    st.markdown("---")
+    except Exception as e:
+        # 如果整个函数出错，显示友好提示
+        st.error(f"⚠️ Extended Reading section temporarily unavailable: {str(e)}")
+        st.info("💡 Don't worry! The main analysis will continue below.")
 # ==========================================
 
 # --- 工具函数 ---
