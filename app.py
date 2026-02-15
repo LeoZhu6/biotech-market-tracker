@@ -1316,43 +1316,20 @@ if should_show_analysis:
                                 st.markdown(f"[{company_data['website']}]({company_data['website']})")
                             else:
                                 st.caption("Not available")
-                        
+                            # 添加 Yahoo Finance 链接
+                            st.markdown("** Market Data**")
+                            st.markdown(f"[Yahoo Finance →](https://finance.yahoo.com/quote/{ticker})")
+                            st.markdown(f"[MarketWatch →](https://www.marketwatch.com/investing/stock/{ticker})")
+
                         with col_info2:
                             st.markdown("**Latest News & Analysis**")
-                            
-                            if company_data['news'] and len(company_data['news']) > 0:
-                                news_found = False
-                                for idx, article in enumerate(company_data['news'][:5], 1):
-                                    try:
-                                        title = article.get('title', '')
-                                        link = article.get('link', '')
-                                        publisher = article.get('publisher', 'Source')
-                                        if link and title:  # 确保链接和标题都存在
-                                            # 截断过长标题
-                                            display_title = title[:80] + '...' if len(title) > 80 else title
-                                            st.markdown(
-                                                f"{idx}. [{display_title}]({link})  \n"
-                                                f"   _— {publisher}_"
-                                            )
-                                            news_found = True
-                                    except Exception as e:
-                                        continue
-                                
-                                # 如果没有找到有效新闻，显示备用链接
-                                if not news_found:
-                                    st.caption("_No recent news available from yfinance_")
-                                    st.markdown(f"**Alternative Sources:**")
-                                    st.markdown(f"• [Google News →](https://news.google.com/search?q={company_data['name']}+{ticker}+stock)")
-                                    st.markdown(f"• [Yahoo Finance News →](https://finance.yahoo.com/quote/{ticker}/news)")
-                                    st.markdown(f"• [Bloomberg →](https://www.bloomberg.com/quote/{ticker}:US)")
-                            else:
-                                # 备用链接（yfinance 完全失败时）
-                                st.caption("_yfinance news unavailable. Try these sources:_")
-                                st.markdown(f"**News Sources:**")
-                                st.markdown(f"• [Google News →](https://news.google.com/search?q={company_data['name']}+{ticker}+stock)")
-                                st.markdown(f"• [Yahoo Finance News →](https://finance.yahoo.com/quote/{ticker}/news)")
-                                st.markdown(f"• [Bloomberg →](https://www.bloomberg.com/quote/{ticker}:US)")
-                                st.markdown(f"• [MarketWatch →](https://www.marketwatch.com/investing/stock/{ticker})")
+                            st.caption("_Click to view latest coverage from trusted sources_")
+                            # 直接提供可靠的新闻源链接
+                            st.markdown(f"• [Google News →](https://news.google.com/search?q={company_data['name']}+{ticker}+stock)")
+                            st.markdown(f"• [Yahoo Finance News →](https://finance.yahoo.com/quote/{ticker}/news)")
+                            st.markdown(f"• [Bloomberg →](https://www.bloomberg.com/quote/{ticker}:US)")
+                            st.markdown(f"• [MarketWatch →](https://www.marketwatch.com/investing/stock/{ticker})")
+                            st.markdown(f"• [Seeking Alpha →](https://seekingalpha.com/symbol/{ticker}/news)")
                 
                 st.markdown("---")
                 # ========================================
