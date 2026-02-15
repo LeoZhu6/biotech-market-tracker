@@ -1458,7 +1458,7 @@ if should_show_analysis:
                             unsafe_allow_html=True
                         )
                 # ========== 新增：延伸阅读板块 ==========
-                display_extended_reading(st.session_state.selected_tickers)
+                #display_extended_reading(st.session_state.selected_tickers)
                 # ======================================
                 st.markdown('<div class="section-title">Real-Time Prices</div>', unsafe_allow_html=True)
                 
