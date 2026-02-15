@@ -494,7 +494,7 @@ if 'custom_tickers' not in st.session_state:
 if 'preset_tickers' not in st.session_state:
     st.session_state.preset_tickers = []
 
-
+from typing import Dict, List  
 
 # ========== 新增：获取公司信息和新闻 ==========
 @st.cache_data(ttl=1800)
