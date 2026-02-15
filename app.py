@@ -1300,25 +1300,25 @@ if should_show_analysis:
                             unsafe_allow_html=True
                         )
                 # ========== 新增：公司情报板块 ==========
-                st.markdown('<div class="section-title">📰 Company Intelligence & Latest News</div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-title">Company Intelligence & Latest News</div>', unsafe_allow_html=True)
                 st.caption("Official websites and recent coverage from authoritative sources")
                 
                 # 使用 expander 让界面更整洁
                 for ticker in tickers:
-                    with st.expander(f"🔍 {TICKER_MAP.get(ticker, ticker)}", expanded=False):
+                    with st.expander(f" {TICKER_MAP.get(ticker, ticker)}", expanded=False):
                         company_data = get_company_info_and_news(ticker)
                         
                         col_info1, col_info2 = st.columns([1, 2])
                         
                         with col_info1:
-                            st.markdown("**🌐 Official Website**")
+                            st.markdown("**Official Website**")
                             if company_data['website']:
                                 st.markdown(f"[{company_data['website']}]({company_data['website']})")
                             else:
                                 st.caption("Not available")
                         
                         with col_info2:
-                            st.markdown("**📰 Latest News & Analysis**")
+                            st.markdown("**Latest News & Analysis**")
                             
                             if company_data['news'] and len(company_data['news']) > 0:
                                 news_found = False
@@ -1341,18 +1341,16 @@ if should_show_analysis:
                                 # 如果没有找到有效新闻，显示备用链接
                                 if not news_found:
                                     st.caption("_No recent news available from yfinance_")
-                                    st.markdown(f"**📌 Alternative Sources:**")
+                                    st.markdown(f"**Alternative Sources:**")
                                     st.markdown(f"• [Google News →](https://news.google.com/search?q={company_data['name']}+{ticker}+stock)")
                                     st.markdown(f"• [Yahoo Finance News →](https://finance.yahoo.com/quote/{ticker}/news)")
-                                    st.markdown(f"• [Reuters →](https://www.reuters.com/search/news?blob={ticker})")
                                     st.markdown(f"• [Bloomberg →](https://www.bloomberg.com/quote/{ticker}:US)")
                             else:
                                 # 备用链接（yfinance 完全失败时）
                                 st.caption("_yfinance news unavailable. Try these sources:_")
-                                st.markdown(f"**📌 News Sources:**")
+                                st.markdown(f"**News Sources:**")
                                 st.markdown(f"• [Google News →](https://news.google.com/search?q={company_data['name']}+{ticker}+stock)")
                                 st.markdown(f"• [Yahoo Finance News →](https://finance.yahoo.com/quote/{ticker}/news)")
-                                st.markdown(f"• [Reuters →](https://www.reuters.com/search/news?blob={ticker})")
                                 st.markdown(f"• [Bloomberg →](https://www.bloomberg.com/quote/{ticker}:US)")
                                 st.markdown(f"• [MarketWatch →](https://www.marketwatch.com/investing/stock/{ticker})")
                 
