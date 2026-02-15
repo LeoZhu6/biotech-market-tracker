@@ -18,6 +18,7 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 import time
 import numpy as np
+from typing import Dict, List
 
 # --- 页面配置 ---
 st.set_page_config(
@@ -493,8 +494,6 @@ if 'custom_tickers' not in st.session_state:
     st.session_state.custom_tickers = []
 if 'preset_tickers' not in st.session_state:
     st.session_state.preset_tickers = []
-
-from typing import Dict, List  
 
 # ========== 新增：获取公司信息和新闻（优化版）==========
 @st.cache_data(ttl=1800, show_spinner=False)
