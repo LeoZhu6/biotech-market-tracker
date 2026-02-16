@@ -993,8 +993,11 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     story.append(Paragraph("BioMarket Intelligence Report", title_style))
     story.append(Spacer(1, 0.2*inch))
     
+    # 格式化当前时间
+    current_time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
     report_info = f"""
-    <b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>
+    <b>Generated:</b> {current_time_str}<br/>
     <b>Period:</b> {TIME_RANGE_MAP.get(time_range, time_range)}<br/>
     <b>Tickers:</b> {', '.join(tickers)}<br/>
     <b>Analyst:</b> DeepSeek-V3 AI
@@ -1006,9 +1009,16 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     
     table_data = [['Ticker', 'Name', 'Return(%)', 'Vol(%)', 'Beta']]
     for _, row in metrics_df.iterrows():
+        # --- 修复黑框问题：过滤掉中文和非ASCII字符 ---
+        raw_name = row['Name']
+        # 只保留英文字符、数字和常见标点
+        clean_name = re.sub(r'[^\x00-\x7F]+', '', raw_name)
+        # 清理可能剩下的空括号，例如 "AMGN ()" -> "AMGN"
+        clean_name = clean_name.replace('()', '').strip()
+        
         table_data.append([
             row['Ticker Code'],
-            row['Name'][:30],
+            clean_name[:30], # 截取过长的名字
             f"{row['Total Return (%)']:.2f}",
             f"{row['Volatility (%)']:.2f}",
             f"{row['Beta']:.2f}"
@@ -1037,16 +1047,19 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     for line in analysis_lines:
         if line.strip():
             if line.startswith('###'):
-                story.append(Paragraph(line.replace('###', '').strip(), heading_style))
+                # --- 修复标题问题：同时去除 ### 和 ** ---
+                clean_title = line.replace('###', '').replace('**', '').strip()
+                story.append(Paragraph(clean_title, heading_style))
             else:
+                # 使用正则修复正文中的粗体：将成对的 **text** 替换为 <b>text</b>
                 formatted_line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+                # 移除剩余的单个 * 号
                 formatted_line = formatted_line.replace('*', '')
                 try:
                     story.append(Paragraph(formatted_line, styles['Normal']))
                 except:
                     story.append(Paragraph(line.replace('*', ''), styles['Normal']))
             story.append(Spacer(1, 0.1*inch))
-
     
     story.append(Spacer(1, 0.3*inch))
     disclaimer = """
@@ -1058,6 +1071,7 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     doc.build(story)
     buffer.seek(0)
     return buffer
+
 
 # 自定义颜色映射函数（不依赖 matplotlib）
 def color_return(val):
