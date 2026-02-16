@@ -10,6 +10,32 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 
 ---
 
+## 🖥️ UI Preview
+
+### Dashboard Overview
+<!-- ⚠️ Put your main screenshot in an 'assets' folder and name it dashboard.png -->
+<div align="center">
+  <img src="assets/dashboard.png" alt="BioMarket Tracker Dashboard" width="100%">
+</div>
+
+<br>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>Technical Analysis</b></td>
+      <td align="center"><b>AI Investment Report</b></td>
+    </tr>
+    <tr>
+      <!-- ⚠️ Name these charts.png and report.png -->
+      <td width="50%"><img src="assets/charts.png" alt="Technical Charts" width="100%"></td>
+      <td width="50%"><img src="assets/report.png" alt="AI Analysis" width="100%"></td>
+    </tr>
+  </table>
+</div>
+
+---
+
 ## 🌟 Key Features
 
 ### 📊 **Market Data & Analytics**
@@ -172,7 +198,7 @@ graph LR
 
 ---
 
-## 🧮 Technical Indicators Explained
+## 🧪 Technical Indicators Explained
 
 ### RSI (Relative Strength Index)
 - **Range**: 0-100
@@ -263,7 +289,7 @@ Defense: Reduce GILD exposure, rotate to IBB for diversification
 
 ---
 
-## 🔐 API Configuration
+## 🔑 API Configuration
 
 ### DeepSeek API Setup
 
@@ -490,9 +516,9 @@ in the Software without restriction...
 - 🎓 Business School, HKUST
 - 💼 Medical Finance Advisor Intern @ Haoyue Capital
 - 🔬 Interests: Finance + Bioengineering
-- 📧 Email: [rzhuar@connect.ust.hk](mailto:your-email@example.com)
-- 💼 LinkedIn: [https://www.linkedin.com/in/runze-zhu-8143b4380/](https://linkedin.com/in/runze-zhu)
-- 🐙 GitHub: [@LeoZhu6](https://github.com/yourusername)
+- 📧 Email: [rzhuar@connect.ust.hk](mailto:rzhuar@connect.ust.hk)
+- 💼 LinkedIn: [https://www.linkedin.com/in/runze-zhu-8143b4380/](https://linkedin.com/in/runze-zhu-8143b4380/)
+- 🐙 GitHub: [@LeoZhu6](https://github.com/LeoZhu6)
 
 ---
 
