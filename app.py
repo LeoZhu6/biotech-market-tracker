@@ -19,6 +19,7 @@ from reportlab.lib.enums import TA_CENTER
 import time
 import numpy as np
 from typing import Dict, List
+import re 
 
 # --- 页面配置 ---
 st.set_page_config(
@@ -369,7 +370,7 @@ def get_ai_response(messages, client):
     """调用 DeepSeek API 获取回答"""
     try:
         response = client.chat.completions.create(
-            model="deepseek-reasoner",
+            model="deepseek-chat",
             messages=messages,
             temperature=0.7,
             max_tokens=2000
@@ -896,8 +897,12 @@ def get_deepseek_analysis(metrics_df, period):
     
     data_csv = metrics_df.to_csv(index=False)
     
-    system_prompt = """
+    # 获取当前日期
+    current_date = datetime.now().strftime("%B %d, %Y")
+
+    system_prompt = f"""
     You are a senior biotech equity analyst at a top-tier investment bank.
+    Today's Date: {current_date}
     
     Generate a professional investment memo in ENGLISH.
     
@@ -923,7 +928,7 @@ def get_deepseek_analysis(metrics_df, period):
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-reasoner",
+            model="deepseek-chat",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -1034,8 +1039,14 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
             if line.startswith('###'):
                 story.append(Paragraph(line.replace('###', '').strip(), heading_style))
             else:
-                story.append(Paragraph(line.replace('**', '<b>').replace('**', '</b>').replace('*', ''), styles['Normal']))
+                formatted_line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+                formatted_line = formatted_line.replace('*', '')
+                try:
+                    story.append(Paragraph(formatted_line, styles['Normal']))
+                except:
+                    story.append(Paragraph(line.replace('*', ''), styles['Normal']))
             story.append(Spacer(1, 0.1*inch))
+
     
     story.append(Spacer(1, 0.3*inch))
     disclaimer = """
@@ -1841,12 +1852,13 @@ if st.session_state.get('analysis_completed', False):
             cols = [col1, col2, col3, col4]
             for idx, (btn_text, question) in enumerate(quick_questions.items()):
                 with cols[idx]:
-                    if st.button(btn_text, key=f"quick_q_{idx}", 
-            use_container_width=True):
+                    if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
+                        # --- 新增：点击快速提问时，清空之前的历史，只显示当前结果 ---
+                        st.session_state.chat_history = [] 
                         with st.spinner("🤖 AI is thinking..."):
-                            handle_user_question(question, analyzed_tickers, 
-            chat_client)
+                            handle_user_question(question, analyzed_tickers, chat_client)
                         st.rerun()
+
 
             
             # 显示对话历史
