@@ -311,7 +311,38 @@ st.markdown("""
         border-top: 2px dashed #e0e0e0;
         margin: 1.5rem 0;
     }
-    /* ========================================= */
+    /* ========== 新闻链接样式 ========== */
+    .news-link-container {
+        margin: 0.4rem 0;
+    }
+    
+    .news-link {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 3px solid #667eea;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.2s ease;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .news-link:hover {
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        transform: translateX(5px);
+        border-left-color: #764ba2;
+    }
+    
+    .official-link {
+        border-left-color: #43a047;
+    }
+    
+    .official-link:hover {
+        border-left-color: #2e7d32;
+    }
+    /* ================================== */
 </style>
 """, unsafe_allow_html=True)
 
@@ -1299,39 +1330,63 @@ if should_show_analysis:
                             f'({type_text} target ${alert["target"]:.2f})</div>',
                             unsafe_allow_html=True
                         )
-                # ========== 新增：公司情报板块 ==========
-                st.markdown('<div class="section-title">Company Intelligence & Latest News</div>', unsafe_allow_html=True)
+                
+                # ========== 增强版：公司情报板块 ==========
+                st.markdown('<div class="section-title">📊 Company Intelligence & Latest News</div>', unsafe_allow_html=True)
                 st.caption("Official websites and recent coverage from authoritative sources")
-                
-                # 使用 expander 让界面更整洁
-                for ticker in tickers:
-                    with st.expander(f" {TICKER_MAP.get(ticker, ticker)}", expanded=False):
-                        company_data = get_company_info_and_news(ticker)
-                        
-                        col_info1, col_info2 = st.columns([1, 2])
-                        
-                        with col_info1:
-                            st.markdown("**Official Website**")
-                            if company_data['website']:
-                                st.markdown(f"[{company_data['website']}]({company_data['website']})")
-                            else:
-                                st.caption("Not available")
-                            # 添加 Yahoo Finance 链接
-                            st.markdown("** Market Data**")
-                            st.markdown(f"[Yahoo Finance →](https://finance.yahoo.com/quote/{ticker})")
-                            st.markdown(f"[MarketWatch →](https://www.marketwatch.com/investing/stock/{ticker})")
 
-                        with col_info2:
-                            st.markdown("**Latest News & Analysis**")
-                            st.caption("_Click to view latest coverage from trusted sources_")
-                            # 直接提供可靠的新闻源链接
-                            st.markdown(f"• [Google News →](https://news.google.com/search?q={company_data['name']}+{ticker}+stock)")
-                            st.markdown(f"• [Yahoo Finance News →](https://finance.yahoo.com/quote/{ticker}/news)")
-                            st.markdown(f"• [Bloomberg →](https://www.bloomberg.com/quote/{ticker}:US)")
-                            st.markdown(f"• [MarketWatch →](https://www.marketwatch.com/investing/stock/{ticker})")
-                            st.markdown(f"• [Seeking Alpha →](https://seekingalpha.com/symbol/{ticker}/news)")
-                
+                for ticker in tickers:
+                    with st.expander(f"🔍 {TICKER_MAP.get(ticker, ticker)}", expanded=False):
+                        company_data = get_company_info_and_news(ticker)
+        
+                        col_left, col_right = st.columns([1, 1])
+        
+                        # 左侧：官方信息
+                        with col_left:
+                            st.markdown("#### 🏢 Official Website")
+                            if company_data['website']:
+                                st.markdown(
+                                    f'<div class="news-link-container">'
+                                    f'<a href="{company_data["website"]}" target="_blank" class="news-link official-link">'
+                                    f'{company_data["website"]}</a></div>',
+                                    unsafe_allow_html=True
+                                )
+                            else:
+                                st.caption("_Not available_")
+            
+                            st.markdown("#### 📈 Market Data")
+                            market_links = {
+                                "Yahoo Finance": f"https://finance.yahoo.com/quote/{ticker}",
+                                "MarketWatch": f"https://www.marketwatch.com/investing/stock/{ticker}"
+                            }
+                            for name, url in market_links.items():
+                                st.markdown(
+                                    f'<div class="news-link-container">'
+                                    f'<a href="{url}" target="_blank" class="news-link official-link">{name} →</a>'
+                                    f'</div>',
+                                    unsafe_allow_html=True
+                                )
+                        # 右侧：新闻源
+                        with col_right:
+                            st.markdown("#### 📰 Latest News & Analysis")
+                            news_sources = {
+                                "Google News": f"https://news.google.com/search?q={company_data['name']}+{ticker}+stock",
+                                "Yahoo Finance News": f"https://finance.yahoo.com/quote/{ticker}/news",
+                                "Bloomberg": f"https://www.bloomberg.com/quote/{ticker}:US",
+                                "MarketWatch": f"https://www.marketwatch.com/investing/stock/{ticker}",
+                                "Seeking Alpha": f"https://seekingalpha.com/symbol/{ticker}/news"
+                            }
+                            for source, url in news_sources.items():
+                                st.markdown(
+                                    f'<div class="news-link-container">'
+                                    f'<a href="{url}" target="_blank" class="news-link">{source} →</a>'
+                                    f'</div>',
+                                    unsafe_allow_html=True
+                                )
+
                 st.markdown("---")
+# ========================================
+    
                 # ========================================
 
                 st.markdown('<div class="section-title">Real-Time Prices</div>', unsafe_allow_html=True)
