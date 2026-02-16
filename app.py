@@ -1332,18 +1332,18 @@ if should_show_analysis:
                         )
                 
                 # ========== 增强版：公司情报板块 ==========
-                st.markdown('<div class="section-title">📊 Company Intelligence & Latest News</div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-title"> Company Intelligence & Latest News</div>', unsafe_allow_html=True)
                 st.caption("Official websites and recent coverage from authoritative sources")
 
                 for ticker in tickers:
-                    with st.expander(f"🔍 {TICKER_MAP.get(ticker, ticker)}", expanded=False):
+                    with st.expander(f" {TICKER_MAP.get(ticker, ticker)}", expanded=False):
                         company_data = get_company_info_and_news(ticker)
         
                         col_left, col_right = st.columns([1, 1])
         
                         # 左侧：官方信息
                         with col_left:
-                            st.markdown("#### 🏢 Official Website")
+                            st.markdown("####  Official Website")
                             if company_data['website']:
                                 st.markdown(
                                     f'<div class="news-link-container">'
@@ -1354,7 +1354,7 @@ if should_show_analysis:
                             else:
                                 st.caption("_Not available_")
             
-                            st.markdown("#### 📈 Market Data")
+                            st.markdown("####  Market Data")
                             market_links = {
                                 "Yahoo Finance": f"https://finance.yahoo.com/quote/{ticker}",
                                 "MarketWatch": f"https://www.marketwatch.com/investing/stock/{ticker}"
@@ -1368,7 +1368,7 @@ if should_show_analysis:
                                 )
                         # 右侧：新闻源
                         with col_right:
-                            st.markdown("#### 📰 Latest News & Analysis")
+                            st.markdown("####  Latest News & Analysis")
                             news_sources = {
                                 "Google News": f"https://news.google.com/search?q={company_data['name']}+{ticker}+stock",
                                 "Yahoo Finance News": f"https://finance.yahoo.com/quote/{ticker}/news",
