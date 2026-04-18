@@ -1671,7 +1671,7 @@ if should_show_analysis:
                     display_df.columns = ['Name', 'Return(%)', 'Vol(%)', 'Beta', 'Sharpe']
                     display_df = display_df.set_index('Name')
                     
-                    styled_df = display_df.style.format("{:.2f}").applymap(
+                    styled_df = display_df.style.format("{:.2f}").map(
                         color_return, 
                         subset=['Return(%)']
                     )
