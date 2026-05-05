@@ -1152,59 +1152,6 @@ with col_time3:
         st.cache_data.clear()
         st.rerun()
 
-# ========== 英文版时间显示 ==========
-col_time1, col_time2, col_time3 = st.columns([2, 1.5, 1.5], gap="small")
-
-with col_time1:
-    # 获取当前时间
-    now = datetime.now()
-    hour = now.hour
-    
-    # 判断市场状态（美股时间：21:30-04:00 北京时间）
-    if (hour == 21 and now.minute >= 30) or (hour >= 22 and hour <= 23) or (hour >= 0 and hour < 4):
-        market_text = "Market Open"
-    else:
-        market_text = "Market Closed"
-    
-    # 英文时间格式
-    current_time = now.strftime("%I:%M %p")  # 03:16 PM
-    current_date = now.strftime("%b %d, %Y")  # Feb 12, 2026
-    
-    # 显示
-    st.markdown(
-        f'<div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95rem;">'
-        f'{market_text}</b> | '
-        f' Last Update: <b>{current_time}</b> | '
-        f' {current_date}'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-
-with col_time2:
-    if st.button("Refresh", use_container_width=True, key="refresh_btn"):
-        # ✅ 强制保存所有关键状态（在 rerun 之前）
-        st.session_state.analysis_started = True
-        st.session_state.is_refreshing = True
-        
-        # ✅ 保存当前选择（防止侧边栏重置）
-        st.session_state._saved_tickers = st.session_state.selected_tickers.copy()
-        st.session_state._saved_time_range = st.session_state.selected_time_range
-        st.session_state._saved_custom = st.session_state.custom_tickers.copy()
-        st.session_state._saved_preset = st.session_state.preset_tickers.copy()
-        
-        # 清除数据缓存
-        get_data.clear()
-        st.session_state.last_update = datetime.now()
-        st.rerun()
-
-with col_time3:
-    if st.button(" New Analysis", use_container_width=True):
-        st.session_state.analysis_completed = False
-        st.session_state.analyzed_tickers = []
-        st.session_state.chat_history = []
-        st.cache_data.clear()
-        st.rerun()
-
 # ==================== 侧边栏 ====================
 with st.sidebar:
     st.markdown("### Control Panel")
