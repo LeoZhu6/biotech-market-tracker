@@ -370,7 +370,7 @@ def get_ai_response(messages, client):
     """调用 DeepSeek API 获取回答"""
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model="deepseek-v4-pro",
             messages=messages,
             temperature=0.7,
             max_tokens=2000
@@ -928,7 +928,7 @@ def get_deepseek_analysis(metrics_df, period):
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model="deepseek-v4-pro",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -1000,7 +1000,7 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     <b>Generated:</b> {current_time_str}<br/>
     <b>Period:</b> {TIME_RANGE_MAP.get(time_range, time_range)}<br/>
     <b>Tickers:</b> {', '.join(tickers)}<br/>
-    <b>Analyst:</b> DeepSeek-V3 AI
+    <b>Analyst:</b> DeepSeek-V4 AI
     """
     story.append(Paragraph(report_info, styles['Normal']))
     story.append(Spacer(1, 0.3*inch))
@@ -1097,7 +1097,60 @@ def color_return(val):
 
 # 标题
 st.markdown('<h1 class="main-title">BioMarket Tracker</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V3</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V4</p>', unsafe_allow_html=True)
+
+# ========== 英文版时间显示 ==========
+col_time1, col_time2, col_time3 = st.columns([2, 1.5, 1.5], gap="small")
+
+with col_time1:
+    # 获取当前时间
+    now = datetime.now()
+    hour = now.hour
+    
+    # 判断市场状态（美股时间：21:30-04:00 北京时间）
+    if (hour == 21 and now.minute >= 30) or (hour >= 22 and hour <= 23) or (hour >= 0 and hour < 4):
+        market_text = "Market Open"
+    else:
+        market_text = "Market Closed"
+    
+    # 英文时间格式
+    current_time = now.strftime("%I:%M %p")  # 03:16 PM
+    current_date = now.strftime("%b %d, %Y")  # Feb 12, 2026
+    
+    # 显示
+    st.markdown(
+        f'<div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95rem;">'
+        f'{market_text}</b> | '
+        f' Last Update: <b>{current_time}</b> | '
+        f' {current_date}'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
+with col_time2:
+    if st.button("Refresh", use_container_width=True, key="refresh_btn"):
+        # ✅ 强制保存所有关键状态（在 rerun 之前）
+        st.session_state.analysis_started = True
+        st.session_state.is_refreshing = True
+        
+        # ✅ 保存当前选择（防止侧边栏重置）
+        st.session_state._saved_tickers = st.session_state.selected_tickers.copy()
+        st.session_state._saved_time_range = st.session_state.selected_time_range
+        st.session_state._saved_custom = st.session_state.custom_tickers.copy()
+        st.session_state._saved_preset = st.session_state.preset_tickers.copy()
+        
+        # 清除数据缓存
+        get_data.clear()
+        st.session_state.last_update = datetime.now()
+        st.rerun()
+
+with col_time3:
+    if st.button(" New Analysis", use_container_width=True):
+        st.session_state.analysis_completed = False
+        st.session_state.analyzed_tickers = []
+        st.session_state.chat_history = []
+        st.cache_data.clear()
+        st.rerun()
 
 # ========== 英文版时间显示 ==========
 col_time1, col_time2, col_time3 = st.columns([2, 1.5, 1.5], gap="small")
@@ -1319,7 +1372,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.caption("Data: Yahoo Finance")
-    st.caption("AI: DeepSeek-V3")
+    st.caption("AI: DeepSeek-V4")
     st.caption("Dev: Runze Zhu")
 
 

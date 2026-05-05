@@ -1,6 +1,6 @@
 # 🧬 BioMarket Tracker
 
-> **Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V3**
+> **Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V4**
 
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -51,7 +51,7 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 - **Interactive Charts**: Powered by Plotly for deep-dive exploration
 
 ### 🤖 **AI-Powered Insights**
-- **DeepSeek-V3 Integration**: Professional investment memo generation
+- **DeepSeek-V4 Integration**: Professional investment memo generation
 - **Sector Analysis**: Market sentiment and trend identification
 - **Actionable Recommendations**: Growth opportunities and risk management
 - **Streaming Response**: Real-time AI analysis generation
@@ -82,7 +82,7 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 | **Frontend** | Streamlit |
 | **Data Source** | Yahoo Finance API (yfinance) |
 | **Visualization** | Plotly, Custom CSS |
-| **AI Model** | DeepSeek-V3 API |
+| **AI Model** | DeepSeek-V4 API |
 | **PDF Generation** | ReportLab |
 | **Data Processing** | Pandas, NumPy |
 
@@ -227,7 +227,7 @@ graph LR
 
 ## 🤖 AI Analysis Features
 
-### What DeepSeek-V3 Analyzes:
+### What DeepSeek-V4 Analyzes:
 
 1. **Sector Overview**
    - Current biotech market sentiment
