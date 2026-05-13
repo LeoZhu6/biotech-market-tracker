@@ -66,125 +66,236 @@ if 'analyzed_tickers' not in st.session_state:
     st.session_state.analyzed_tickers = []
 # ======================================
 
-# --- 自定义 CSS 样式 ---
+# --- 自定义 CSS 样式（Anthropic 暖色调 + Biotech 绿点缀）---
 st.markdown("""
 <style>
+    /* ============================================================
+       Anthropic-inspired warm palette, adapted for biotech
+       Accent: Biotech Sage Green instead of Terracotta
+       ============================================================ */
+    
+    /* --- Font stack: system fonts first, Google Fonts as enhancement --- */
+    /* Crimson Pro and Inter load via @import for modern browsers;
+       Georgia and system-ui are the reliable fallbacks */
+    
     :root {
-        --primary-color: #1e88e5;
-        --secondary-color: #43a047;
-        --accent-color: #ff6f00;
+        --color-bg: #f5f4ed;
+        --color-surface: #faf9f5;
+        --color-text: #141413;
+        --color-text-secondary: #5e5d59;
+        --color-text-tertiary: #87867f;
+        --color-border: #f0eee6;
+        --color-border-warm: #e8e6dc;
+        --color-accent: #4a7c59;
+        --color-accent-hover: #5d8f6e;
+        --color-accent-light: #e8f0ea;
+        --color-sand: #e8e6dc;
+        --color-sand-hover: #dcd9cd;
+        --color-dark: #30302e;
+        --color-positive: #4a7c59;
+        --color-negative: #b53333;
+        --color-neutral: #8a7340;
     }
     
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* --- Hide Streamlit default UI chrome ---
+       DEBUG: removing all hides temporarily to isolate the sidebar issue */
+    /* #MainMenu {visibility: hidden !important;} */
+    /* footer {visibility: hidden !important;} */
+    /* [data-testid="stToolbar"] {display: none !important;} */
+    /* [data-testid="stDecoration"] {display: none !important;} */
+    /* [data-testid="stStatusWidget"] {display: none !important;} */
     
+    /* --- Page-level background --- */
+    [data-testid="stAppViewContainer"] {
+        background: #f5f4ed;
+    }
+    [data-testid="stAppViewContainer"] > .block-container {
+        padding-top: 2rem;
+    }
+    
+    /* --- Typography (Anthropic's serif-forward hierarchy) --- */
     .main-title {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        font-weight: 800;
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
+        color: #141413;
+        font-size: 2.6rem;
+        font-weight: 500;
         text-align: center;
-        margin-bottom: 0.3rem;
-        letter-spacing: -0.5px;
+        margin-bottom: 0.2rem;
+        letter-spacing: -0.3px;
+        line-height: 1.10;
     }
     
     .subtitle {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
         text-align: center;
-        color: #666;
-        font-size: 1rem;
-        margin-bottom: 2rem;
+        color: #87867f;
+        font-size: 0.95rem;
+        margin-bottom: 2.5rem;
         font-weight: 400;
+        line-height: 1.6;
     }
     
+    .section-title {
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
+        font-size: 1.35rem;
+        font-weight: 500;
+        color: #141413;
+        margin: 2.5rem 0 0.8rem 0;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid #e8e6dc;
+        line-height: 1.15;
+    }
+    
+    h1, h2, h3, h4 {
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
+        font-weight: 500 !important;
+        color: #141413 !important;
+        line-height: 1.15 !important;
+    }
+    
+    /* --- Price Cards --- */
     .price-card {
-        background: white;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: #faf9f5;
         padding: 1.2rem;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        box-shadow: 0px 0px 0px 1px #f0eee6;
         border-left: 4px solid;
         margin: 0.5rem 0;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
     
     .price-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        box-shadow: rgba(0,0,0,0.05) 0px 4px 24px;
     }
     
     .price-card.positive {
-        border-left-color: #4caf50;
+        border-left-color: #4a7c59;
     }
     
     .price-card.negative {
-        border-left-color: #f44336;
+        border-left-color: #b53333;
     }
     
     .card-ticker {
-        font-size: 0.85rem;
-        color: #666;
-        font-weight: 600;
+        font-size: 0.8rem;
+        color: #87867f;
+        font-weight: 500;
         margin-bottom: 0.3rem;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     .card-price {
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
         font-size: 1.8rem;
-        font-weight: bold;
+        font-weight: 500;
         margin: 0.3rem 0;
     }
     
     .card-change {
-        font-size: 0.9rem;
-        font-weight: 600;
+        font-size: 0.85rem;
+        font-weight: 500;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
+    /* --- Status Badges --- */
     .status-badge {
         display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        font-weight: 600;
+        padding: 0.2rem 0.7rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
         margin: 0.2rem;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     .status-bullish {
-        background: #e8f5e9;
-        color: #2e7d32;
-        border: 1px solid #4caf50;
+        background: #e8f0ea;
+        color: #3d6b4e;
+        box-shadow: 0px 0px 0px 1px #4a7c59;
     }
     
     .status-bearish {
-        background: #ffebee;
-        color: #c62828;
-        border: 1px solid #f44336;
+        background: #faf0f0;
+        color: #9b2c2c;
+        box-shadow: 0px 0px 0px 1px #b53333;
     }
     
     .status-neutral {
-        background: #fff3e0;
-        color: #e65100;
-        border: 1px solid #ff9800;
+        background: #faf7f0;
+        color: #8a7340;
+        box-shadow: 0px 0px 0px 1px #c4a64a;
     }
     
+    /* --- Sidebar --- */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+        background: #faf9f5;
+        border-right: 1px solid #f0eee6;
+    }
+    [data-testid="stSidebar"] .stMarkdown p,
+    [data-testid="stSidebar"] .stMarkdown span,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] .st-cb,
+    [data-testid="stSidebar"] .st-bb,
+    [data-testid="stSidebar"] .st-bc,
+    [data-testid="stSidebar"] .st-cd,
+    [data-testid="stSidebar"] .stButton,
+    [data-testid="stSidebar"] .stSelectbox,
+    [data-testid="stSidebar"] .stTextInput,
+    [data-testid="stSidebar"] .stMultiSelect {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
     }
     
-    .stButton>button {
+    /* --- Buttons (exclude Streamlit chrome buttons to preserve icon fonts) --- */
+    .stButton>button:not([data-testid="collapsedControl"]) {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
         border-radius: 8px;
-        font-weight: 600;
+        font-weight: 500;
         transition: all 0.2s ease;
+        background: #e8e6dc;
+        color: #4d4c48;
+        border: none;
+        box-shadow: 0px 0px 0px 1px #d1cfc5;
     }
     
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    .stButton>button:not([data-testid="collapsedControl"]):hover {
+        background: #dcd9cd;
+        box-shadow: 0px 0px 0px 1px #c2c0b6;
+        color: #141413;
     }
     
+    .stButton>button[kind="primary"]:not([data-testid="collapsedControl"]) {
+        background: #4a7c59;
+        color: #faf9f5;
+        box-shadow: 0px 0px 0px 1px #4a7c59;
+    }
+    
+    .stButton>button[kind="primary"]:not([data-testid="collapsedControl"]):hover {
+        background: #5d8f6e;
+        box-shadow: 0px 0px 0px 1px #5d8f6e;
+    }
+    
+    /* Preserve Streamlit Material Icons — target sidebar controls only */
+    [data-testid="collapsedControl"],
+    [data-testid="collapsedControl"] *,
+    button[aria-label="Open sidebar"],
+    button[aria-label="Open sidebar"] *,
+    button[aria-label="Close sidebar"],
+    button[aria-label="Close sidebar"] * {
+        font-family: "Material Icons", "Material Symbols Outlined", "Material Icons Outlined" !important;
+        font-feature-settings: "liga" !important;
+        -webkit-font-smoothing: antialiased !important;
+    }
+    
+    /* --- Live Indicator --- */
     .live-indicator {
         display: inline-block;
         width: 8px;
         height: 8px;
-        background: #4caf50;
+        background: #4a7c59;
         border-radius: 50%;
         animation: pulse 2s infinite;
         margin-right: 6px;
@@ -195,155 +306,174 @@ st.markdown("""
         50% { opacity: 0.3; }
     }
     
+    /* --- Alert Card --- */
     .alert-card {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-        padding: 1rem 1.2rem;
-        border-radius: 8px;
-        color: white;
+        background: #faf0f0;
+        padding: 0.9rem 1.1rem;
+        border-radius: 10px;
+        color: #9b2c2c;
         margin: 0.5rem 0;
         font-weight: 500;
+        box-shadow: 0px 0px 0px 1px #e8c8c8;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     hr {
         margin: 2rem 0;
         border: none;
-        border-top: 1px solid #e0e0e0;
+        border-top: 1px solid #e8e6dc;
     }
     
     .dataframe {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
-    .section-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #333;
-        margin: 1.5rem 0 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #667eea;
-    }
-    
-    .analyze-button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 10px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    .analyze-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-    
+    /* --- Selection Summary --- */
     .selection-summary {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        background: #faf9f5;
         padding: 1.5rem;
         border-radius: 12px;
-        border: 2px solid #667eea;
+        box-shadow: 0px 0px 0px 1px #f0eee6;
         margin: 1rem 0;
+    }
+    .selection-summary h3 {
+        color: #141413 !important;
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
     }
     
     .ticker-tag {
         display: inline-block;
-        background: #667eea;
-        color: white;
-        padding: 0.3rem 0.6rem;
+        background: #4a7c59;
+        color: #faf9f5;
+        padding: 0.25rem 0.55rem;
         border-radius: 6px;
-        margin: 0.2rem;
-        font-size: 0.85rem;
-        font-weight: 600;
+        margin: 0.15rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     .ticker-tag.custom {
-        background: #43a047;
+        background: #8a7340;
     }
-    /* ========== 新增：对话界面样式 ========== */
+    
+    /* --- Chat Interface --- */
     .chat-container {
-        background: #f8f9fa;
+        background: #faf9f5;
         border-radius: 12px;
         padding: 1.5rem;
         margin: 2rem 0;
-        border: 2px solid #e0e0e0;
+        box-shadow: 0px 0px 0px 1px #f0eee6;
     }
     
     .chat-message {
-        background: white;
+        background: #f5f4ed;
         padding: 1rem;
         border-radius: 8px;
         margin: 0.8rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0px 0px 0px 1px #f0eee6;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     .chat-message.user {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border-left: 3px solid #667eea;
+        background: #faf9f5;
+        border-left: 3px solid #4a7c59;
     }
     
     .chat-message.assistant {
-        background: white;
-        border-left: 3px solid #43a047;
+        background: #f5f4ed;
+        border-left: 3px solid #8a7340;
     }
     
     .chat-header {
-        font-weight: 700;
-        color: #667eea;
+        font-weight: 500;
+        color: #5e5d59;
         margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    .quick-question-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        border: none;
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin: 0.3rem;
+        font-size: 0.85rem;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
     
     .chat-divider {
-        border-top: 2px dashed #e0e0e0;
+        border-top: 1px solid #e8e6dc;
         margin: 1.5rem 0;
     }
-    /* ========== 新闻链接样式 ========== */
+    
+    /* --- News Links --- */
     .news-link-container {
-        margin: 0.4rem 0;
+        margin: 0.3rem 0;
     }
     
     .news-link {
         display: inline-block;
-        padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-left: 3px solid #667eea;
+        padding: 0.45rem 0.9rem;
+        background: #faf9f5;
+        border-left: 3px solid #4a7c59;
         border-radius: 6px;
         text-decoration: none;
-        color: #333;
+        color: #4d4c48;
         transition: all 0.2s ease;
         width: 100%;
         box-sizing: border-box;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-size: 0.85rem;
+        box-shadow: 0px 0px 0px 1px #f0eee6;
     }
     
     .news-link:hover {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        transform: translateX(5px);
-        border-left-color: #764ba2;
+        background: #e8f0ea;
+        box-shadow: 0px 0px 0px 1px #4a7c59;
+        color: #141413;
     }
     
     .official-link {
-        border-left-color: #43a047;
+        border-left-color: #8a7340;
     }
     
     .official-link:hover {
-        border-left-color: #2e7d32;
+        border-left-color: #6b5a2e;
     }
-    /* ================================== */
+    
+    /* --- General overrides (targeted, not global) --- */
+    .stMarkdown p, .stMarkdown span, .stMarkdown li, .stMarkdown label {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .stMarkdown p, .stMarkdown li {
+        color: #4d4c48;
+    }
+    code {
+        font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+        background: #f0eee6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+    .stMarkdown {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    
+    /* --- Streamlit widget overrides for Anthropic feel --- */
+    .stSelectbox label, .stMultiSelect label, .stTextInput label {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+        color: #5e5d59 !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+    }
+    .stExpander {
+        border: 1px solid #f0eee6 !important;
+        border-radius: 10px !important;
+        background: #faf9f5 !important;
+    }
+    .stExpander > div:first-child {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+        color: #87867f !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #4a7c59 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -976,18 +1106,20 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
         'CustomTitle',
         parent=styles['Heading1'],
         fontSize=24,
-        textColor=colors.HexColor('#667eea'),
+        textColor=colors.HexColor('#141413'),
         spaceAfter=30,
-        alignment=TA_CENTER
+        alignment=TA_CENTER,
+        fontName='Times-Bold'
     )
     
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
         fontSize=14,
-        textColor=colors.HexColor('#43a047'),
+        textColor=colors.HexColor('#4a7c59'),
         spaceAfter=12,
-        spaceBefore=12
+        spaceBefore=12,
+        fontName='Times-Bold'
     )
     
     story.append(Paragraph("BioMarket Intelligence Report", title_style))
@@ -1026,14 +1158,14 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     
     table = Table(table_data, colWidths=[0.8*inch, 2.5*inch, 1.2*inch, 1.2*inch, 0.8*inch])
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4a7c59')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#faf9f5')),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Times-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#faf9f5')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e8e6dc')),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
     ]))
     
@@ -1073,23 +1205,23 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     return buffer
 
 
-# 自定义颜色映射函数（不依赖 matplotlib）
+# 自定义颜色映射函数（Anthropic 暖色调版本）
 def color_return(val):
-    """根据回报率返回颜色"""
+    """根据回报率返回暖色调颜色"""
     try:
         val = float(val)
         if val > 20:
-            return 'background-color: #4caf50; color: white; font-weight: bold'
+            return 'background-color: #3d6b4e; color: #faf9f5; font-weight: 500'
         elif val > 10:
-            return 'background-color: #8bc34a; color: white'
+            return 'background-color: #5d8f6e; color: #faf9f5'
         elif val > 0:
-            return 'background-color: #cddc39; color: black'
+            return 'background-color: #a8c8a0; color: #2d4d38'
         elif val > -10:
-            return 'background-color: #ffeb3b; color: black'
+            return 'background-color: #e8d5b0; color: #6b5a2e'
         elif val > -20:
-            return 'background-color: #ff9800; color: white'
+            return 'background-color: #d4a08a; color: #faf9f5'
         else:
-            return 'background-color: #f44336; color: white; font-weight: bold'
+            return 'background-color: #b53333; color: #faf9f5; font-weight: 500'
     except:
         return ''
 
@@ -1119,10 +1251,11 @@ with col_time1:
     
     # 显示
     st.markdown(
-        f'<div style="padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.95rem;">'
-        f'{market_text}</b> | '
-        f' Last Update: <b>{current_time}</b> | '
-        f' {current_date}'
+        f'<div style="padding: 10px 16px; background: #faf9f5; border-radius: 10px; font-size: 0.9rem; '
+        f'box-shadow: 0px 0px 0px 1px #f0eee6; font-family: Inter, system-ui, sans-serif; color: #4d4c48;">'
+        f'<span style="color: #87867f;">Market Status:</span> <b style="color: #141413;">{market_text}</b>  '
+        f'Last Update: <b style="color: #141413;">{current_time}</b>  '
+        f'<span style="color: #87867f;">{current_date}</span>'
         f'</div>',
         unsafe_allow_html=True
     )
@@ -1453,18 +1586,18 @@ if should_show_analysis:
                 
                 spy_full_name = TICKER_MAP['SPY']
                 fig_perf.update_traces(
-                    patch={"line": {"color": "#FF6F00", "width": 3, "dash": "dash"}}, 
+                    patch={"line": {"color": "#8a7340", "width": 2.5, "dash": "dash"}}, 
                     selector={"name": spy_full_name}
                 )
                 fig_perf.update_traces(
-                    patch={"line": {"width": 2.5}}, 
+                    patch={"line": {"width": 2.0}}, 
                     selector=lambda t: t.name != spy_full_name
                 )
                 fig_perf.update_layout(
                     hovermode='x unified',
-                    plot_bgcolor='white',
-                    paper_bgcolor='white',
-                    font=dict(size=11),
+                    plot_bgcolor='#faf9f5',
+                    paper_bgcolor='#faf9f5',
+                    font=dict(size=11, color='#4d4c48'),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                     height=450
                 )
@@ -1496,18 +1629,20 @@ if should_show_analysis:
                         fig_rsi.add_trace(go.Scatter(
                             x=rsi.index, y=rsi, 
                             name='RSI', 
-                            line=dict(color='#9c27b0', width=2.5)
+                            line=dict(color='#5d7a6e', width=2.0)
                         ))
-                        fig_rsi.add_hrect(y0=70, y1=100, fillcolor="red", opacity=0.08, line_width=0)
-                        fig_rsi.add_hrect(y0=0, y1=30, fillcolor="green", opacity=0.08, line_width=0)
-                        fig_rsi.add_hline(y=70, line_dash="dash", line_color="red", annotation_text="Overbought")
-                        fig_rsi.add_hline(y=30, line_dash="dash", line_color="green", annotation_text="Oversold")
+                        fig_rsi.add_hrect(y0=70, y1=100, fillcolor="#d4a08a", opacity=0.10, line_width=0)
+                        fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#a8c8a0", opacity=0.10, line_width=0)
+                        fig_rsi.add_hline(y=70, line_dash="dash", line_color="#b53333", annotation_text="Overbought")
+                        fig_rsi.add_hline(y=30, line_dash="dash", line_color="#4a7c59", annotation_text="Oversold")
                         fig_rsi.update_layout(
                             title=f"RSI - {TICKER_MAP.get(tech_ticker, tech_ticker)}",
                             yaxis_title="RSI",
                             height=320,
                             hovermode='x',
-                            plot_bgcolor='white',
+                            plot_bgcolor='#faf9f5',
+                            paper_bgcolor='#faf9f5',
+                            font=dict(size=11, color='#4d4c48'),
                             showlegend=False
                         )
                         st.plotly_chart(fig_rsi, use_container_width=True)
@@ -1528,24 +1663,26 @@ if should_show_analysis:
                         fig_macd.add_trace(go.Scatter(
                             x=macd.index, y=macd, 
                             name='MACD', 
-                            line=dict(color='#2196f3', width=2)
+                            line=dict(color='#5d7a6e', width=1.8)
                         ))
                         fig_macd.add_trace(go.Scatter(
                             x=signal.index, y=signal, 
                             name='Signal', 
-                            line=dict(color='#ff5722', width=2)
+                            line=dict(color='#b53333', width=1.8)
                         ))
                         fig_macd.add_trace(go.Bar(
                             x=histogram.index, y=histogram, 
                             name='Histogram', 
-                            marker_color='rgba(120,120,120,0.4)'
+                            marker_color='rgba(90,85,80,0.3)'
                         ))
                         fig_macd.update_layout(
                             title=f"MACD - {TICKER_MAP.get(tech_ticker, tech_ticker)}",
                             yaxis_title="Value",
                             height=320,
                             hovermode='x',
-                            plot_bgcolor='white',
+                            plot_bgcolor='#faf9f5',
+                            paper_bgcolor='#faf9f5',
+                            font=dict(size=11, color='#4d4c48'),
                             showlegend=True,
                             legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5)
                         )
@@ -1562,32 +1699,34 @@ if should_show_analysis:
                     fig_bb.add_trace(go.Scatter(
                         x=ticker_prices.index, y=ticker_prices, 
                         name='Price', 
-                        line=dict(color='#000000', width=2.5)
+                        line=dict(color='#141413', width=2.2)
                     ))
                     fig_bb.add_trace(go.Scatter(
                         x=sma.index, y=sma, 
                         name='SMA(20)', 
-                        line=dict(color='#2196f3', width=1.5, dash='dash')
+                        line=dict(color='#5d7a6e', width=1.5, dash='dash')
                     ))
                     fig_bb.add_trace(go.Scatter(
                         x=upper_bb.index, y=upper_bb, 
                         name='Upper Band', 
-                        line=dict(color='#f44336', width=1, dash='dot'),
+                        line=dict(color='#b53333', width=1, dash='dot'),
                         fill=None
                     ))
                     fig_bb.add_trace(go.Scatter(
                         x=lower_bb.index, y=lower_bb, 
                         name='Lower Band', 
-                        line=dict(color='#4caf50', width=1, dash='dot'),
+                        line=dict(color='#4a7c59', width=1, dash='dot'),
                         fill='tonexty',
-                        fillcolor='rgba(120,120,120,0.08)'
+                        fillcolor='rgba(74,124,89,0.06)'
                     ))
                     fig_bb.update_layout(
                         title=f"Bollinger Bands - {TICKER_MAP.get(tech_ticker, tech_ticker)}",
                         yaxis_title="Price ($)",
                         height=380,
                         hovermode='x unified',
-                        plot_bgcolor='white',
+                        plot_bgcolor='#faf9f5',
+                        paper_bgcolor='#faf9f5',
+                        font=dict(size=11, color='#4d4c48'),
                         legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5)
                     )
                     st.plotly_chart(fig_bb, use_container_width=True)
@@ -1634,33 +1773,35 @@ if should_show_analysis:
                         text='Ticker Code',
                         size='Marker Size',
                         color='Beta', 
-                        color_continuous_scale='RdYlGn_r',
+                        color_continuous_scale=[[0, '#4a7c59'], [0.5, '#e8d5b0'], [1, '#b53333']],
                         title="Risk-Return Frontier"
                     )
                     
                     fig_scat.update_traces(
                         textposition='top center',
-                        textfont=dict(size=11, color='black'),
-                        marker=dict(line=dict(width=1.5, color='white'))
+                        textfont=dict(size=11, color='#141413'),
+                        marker=dict(line=dict(width=1.5, color='#faf9f5'))
                     )
                     fig_scat.add_vline(
                         x=spy_volatility, 
                         line_dash="dash", 
-                        line_color="#FF6F00", 
+                        line_color="#8a7340", 
                         annotation_text="Market Risk",
                         annotation_position="top"
                     )
                     fig_scat.add_hline(
                         y=spy_total_return, 
                         line_dash="dash", 
-                        line_color="#FF6F00", 
+                        line_color="#8a7340", 
                         annotation_text="Market Return",
                         annotation_position="right"
                     )
                     fig_scat.update_layout(
                         height=480,
                         hovermode='closest',
-                        plot_bgcolor='white',
+                        plot_bgcolor='#faf9f5',
+                        paper_bgcolor='#faf9f5',
+                        font=dict(size=11, color='#4d4c48'),
                         showlegend=True
                     )
                     st.plotly_chart(fig_scat, use_container_width=True)
@@ -1799,8 +1940,10 @@ else:
     with col2:
         st.markdown("""
         <div style="text-align: center; padding: 3rem 0;">
-            <h2 style="color: #667eea; font-weight: 700;">Welcome to BioMarket Tracker</h2>
-            <p style="font-size: 1rem; color: #666; margin: 1.5rem 0;">
+            <h2 style="font-family: Georgia, 'Times New Roman', serif; color: #141413; font-weight: 500;">
+            Welcome to BioMarket Tracker
+            </h2>
+            <p style="font-size: 1rem; color: #87867f; margin: 1.5rem 0; font-family: Inter, system-ui, sans-serif;">
                 Professional biotech equity analysis platform
             </p>
         </div>
@@ -1831,8 +1974,10 @@ else:
         
         st.markdown("""
         <div style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; 
-                    background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
-            <p style="color: #666; font-size: 0.9rem; margin: 0;">
+                    background: #faf9f5; border-radius: 10px; 
+                    box-shadow: 0px 0px 0px 1px #f0eee6;
+                    font-family: Inter, system-ui, sans-serif;">
+            <p style="color: #87867f; font-size: 0.85rem; margin: 0;">
                 Disclaimer: For educational purposes only. Not investment advice.
             </p>
         </div>
