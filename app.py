@@ -69,14 +69,18 @@ if 'analyzed_tickers' not in st.session_state:
 # --- 自定义 CSS 样式（Anthropic 暖色调 + Biotech 绿点缀）---
 st.markdown("""
 <style>
+    /* --- Google Fonts: Crimson Pro (serif) + Inter (sans-serif) --- */
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap');
+
     /* ============================================================
        Anthropic-inspired warm palette, adapted for biotech
        Accent: Biotech Sage Green instead of Terracotta
        ============================================================ */
     
-    /* --- Font stack: system fonts first, Google Fonts as enhancement --- */
-    /* Crimson Pro and Inter load via @import for modern browsers;
-       Georgia and system-ui are the reliable fallbacks */
+    /* --- Typography: Claude's serif-forward hierarchy ---
+       Headings & body → Crimson Pro serif
+       Numbers → Inter sans-serif + tabular-nums for alignment
+       Georgia and system-ui are the reliable fallbacks --- */
     
     :root {
         --color-bg: #f5f4ed;
@@ -108,6 +112,7 @@ st.markdown("""
     /* --- Page-level background --- */
     [data-testid="stAppViewContainer"] {
         background: #f5f4ed;
+        font-variant-numeric: tabular-nums;
     }
     [data-testid="stAppViewContainer"] > .block-container {
         padding-top: 2rem;
@@ -186,7 +191,8 @@ st.markdown("""
     }
     
     .card-price {
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-variant-numeric: tabular-nums;
         font-size: 1.8rem;
         font-weight: 500;
         margin: 0.3rem 0;
@@ -196,6 +202,7 @@ st.markdown("""
         font-size: 0.85rem;
         font-weight: 500;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-variant-numeric: tabular-nums;
     }
     
     /* --- Status Badges --- */
@@ -374,6 +381,7 @@ st.markdown("""
         margin: 0.8rem 0;
         box-shadow: 0px 0px 0px 1px #f0eee6;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-variant-numeric: tabular-nums;
     }
     
     .chat-message.user {
@@ -384,6 +392,15 @@ st.markdown("""
     .chat-message.assistant {
         background: #f5f4ed;
         border-left: 3px solid #8a7340;
+    }
+    
+    .chat-message.assistant .chat-header + div,
+    .chat-message.assistant p {
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
+        font-variant-numeric: tabular-nums;
+        font-size: 1.02rem;
+        line-height: 1.65;
+        color: #141413;
     }
     
     .chat-header {
@@ -440,6 +457,21 @@ st.markdown("""
     }
     .stMarkdown p, .stMarkdown li {
         color: #4d4c48;
+    }
+
+    /* --- AI Report body: serif for prose, tabular-nums for data --- */
+    [data-testid="stStatus"] .stMarkdown p,
+    [data-testid="stStatus"] .stMarkdown li,
+    [data-testid="stStatus"] .stMarkdown h1,
+    [data-testid="stStatus"] .stMarkdown h2,
+    [data-testid="stStatus"] .stMarkdown h3 {
+        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
+        font-variant-numeric: tabular-nums;
+    }
+    [data-testid="stStatus"] .stMarkdown p {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #141413;
     }
     code {
         font-family: 'JetBrains Mono', 'Consolas', monospace !important;
