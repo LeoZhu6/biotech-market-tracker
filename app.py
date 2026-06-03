@@ -196,13 +196,10 @@ st.markdown("""
         background: var(--accent-h) !important;
     }
 
-    /* Preserve Streamlit Material Icons — button only, NOT child * to avoid font bleed */
+    /* collapsedControl base style - Material Icons handled in SIDEBAR section */
     [data-testid="collapsedControl"],
     button[aria-label="Open sidebar"],
     button[aria-label="Close sidebar"] {
-        font-family: "Material Icons", "Material Symbols Outlined", "Material Icons Outlined" !important;
-        font-feature-settings: "liga" !important;
-        -webkit-font-smoothing: antialiased !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
@@ -258,8 +255,26 @@ st.markdown("""
         background: var(--surface) !important;
         border-right: 0.5px solid var(--border) !important;
     }
-    [data-testid="stSidebar"] * {
+    /* Target text elements only - NOT * which would kill Material Icons ligatures */
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] div[data-testid="stMarkdownContainer"],
+    [data-testid="stSidebar"] .stMarkdown,
+    [data-testid="stSidebar"] .stTextInput input,
+    [data-testid="stSidebar"] .stSelectbox,
+    [data-testid="stSidebar"] .stMultiSelect {
         font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    /* Restore Material Icons on the collapse button and ALL its children */
+    [data-testid="collapsedControl"],
+    [data-testid="collapsedControl"] *,
+    button[aria-label="Open sidebar"],
+    button[aria-label="Open sidebar"] *,
+    button[aria-label="Close sidebar"],
+    button[aria-label="Close sidebar"] * {
+        font-family: "Material Icons", "Material Symbols Outlined", "Material Icons Outlined" !important;
+        font-feature-settings: "liga" !important;
+        -webkit-font-smoothing: antialiased !important;
     }
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
