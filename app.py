@@ -938,8 +938,15 @@ Be professional, objective, and insightful."""
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
 
-    # ── 快捷按钮：先渲染所有按钮，收集点击结果，再统一处理
-    #    不调用 st.rerun()，避免双重渲染和按钮重复问题
+    # ── 思考模式：只渲染 spinner，return 掉所有下方内容，彻底消除残影
+    if st.session_state.get('_thinking_question'):
+        question = st.session_state.pop('_thinking_question')
+        with st.spinner("🤖 AI is thinking..."):
+            handle_user_question(question, selected_tickers, client)
+        st.rerun()
+        return
+
+    # ── 快捷按钮（点击后存 session_state + rerun，不在当前轮渲染 spinner 以下内容）
     st.markdown("**🚀 Quick Questions:**")
     quick_questions = {
         "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
@@ -948,18 +955,13 @@ def add_chat_interface(selected_tickers, client):
         "📈 Future Trends":     f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
     }
     col1, col2, col3, col4 = st.columns(4)
-    clicked_question = None
     for idx, (btn_text, question) in enumerate(quick_questions.items()):
         with [col1, col2, col3, col4][idx]:
             if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                clicked_question = question
+                st.session_state['_thinking_question'] = question
+                st.rerun()
 
-    # 处理快捷按钮点击（spinner 在按钮下方展示，不触发 rerun）
-    if clicked_question:
-        with st.spinner("🤖 AI is thinking..."):
-            handle_user_question(clicked_question, selected_tickers, client)
-
-    # ── 对话历史（含刚刚生成的回复）
+    # ── 对话历史
     display_chat_history()
 
     # ── 清空历史
@@ -970,7 +972,7 @@ def add_chat_interface(selected_tickers, client):
                 st.session_state.chat_history = []
                 st.rerun()
 
-    # ── 自定义输入框（text_input + Send 按钮；rerun 仅用于清空输入框）
+    # ── 输入框 + Send
     st.markdown("---")
     col_inp, col_send = st.columns([5, 1])
     with col_inp:
@@ -984,9 +986,7 @@ def add_chat_interface(selected_tickers, client):
         send_btn = st.button("Send", type="primary", use_container_width=True, key="chat_send")
 
     if send_btn and user_input:
-        with st.spinner("🤖 AI is thinking..."):
-            handle_user_question(user_input, selected_tickers, client)
-        # 自增 key 以清空输入框，然后 rerun
+        st.session_state['_thinking_question'] = user_input
         st.session_state['_chat_ver'] = st.session_state.get('_chat_ver', 0) + 1
         st.rerun()
 # ==========================================
@@ -2431,7 +2431,6 @@ else:
 # ========== AI 对话功能（只在分析完成后显示）==========
 # 只有在分析完成后才显示对话界面
 if st.session_state.get('analysis_completed', False):
-    st.markdown("---")
     st.markdown('<div class="section-title">💬 Continue Discussion with AI Analyst</div>', unsafe_allow_html=True)
     
     try:
