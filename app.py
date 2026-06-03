@@ -2342,5 +2342,3 @@ if st.session_state.get('analysis_completed', False):
     except Exception as e:
         st.error(f"Chat feature error: {str(e)}")
 # ====================================================
-e)}")
-# ====================================================
