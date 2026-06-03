@@ -99,7 +99,7 @@ st.markdown("""
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     [data-testid="stToolbar"] {display: none !important;}
-    [data-testid="stDecoration"] {display: none !important;}
+    /* NOTE: stDecoration must NOT be hidden — it contains the sidebar expand button */
     [data-testid="stStatusWidget"] {display: none !important;}
 
     /* ---- Page background ---- */
@@ -193,16 +193,16 @@ st.markdown("""
         background: var(--accent-h) !important;
     }
 
-    /* Preserve Streamlit Material Icons */
+    /* Preserve Streamlit Material Icons — button only, NOT child * to avoid font bleed */
     [data-testid="collapsedControl"],
-    [data-testid="collapsedControl"] *,
     button[aria-label="Open sidebar"],
-    button[aria-label="Open sidebar"] *,
-    button[aria-label="Close sidebar"],
-    button[aria-label="Close sidebar"] * {
+    button[aria-label="Close sidebar"] {
         font-family: "Material Icons", "Material Symbols Outlined", "Material Icons Outlined" !important;
         font-feature-settings: "liga" !important;
         -webkit-font-smoothing: antialiased !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     /* =====================================================================
@@ -1485,7 +1485,7 @@ with col_status:
     )
 
 with col_refresh:
-    if st.button("↺ Refresh", use_container_width=True, key="refresh_btn"):
+    if st.button("Refresh", use_container_width=True, key="refresh_btn"):
         st.session_state.analysis_started = True
         st.session_state.is_refreshing = True
         st.session_state._saved_tickers = st.session_state.selected_tickers.copy()
@@ -1497,7 +1497,7 @@ with col_refresh:
         st.rerun()
 
 with col_new:
-    if st.button("+ New Analysis", use_container_width=True):
+    if st.button("New Analysis", use_container_width=True):
         st.session_state.analysis_completed = False
         st.session_state.analyzed_tickers = []
         st.session_state.chat_history = []
@@ -2341,4 +2341,6 @@ if st.session_state.get('analysis_completed', False):
                         
     except Exception as e:
         st.error(f"Chat feature error: {str(e)}")
+# ====================================================
+e)}")
 # ====================================================
