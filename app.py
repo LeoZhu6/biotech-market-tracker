@@ -352,6 +352,15 @@ st.markdown("""
         color: var(--text) !important;
         border-radius: 8px !important;
     }
+    [data-testid="stSelectbox"] input,
+    [data-baseweb="select"] input {
+        caret-color: transparent !important;
+        cursor: pointer !important;
+        user-select: none !important;
+    }
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        cursor: pointer !important;
+    }
     .stMultiSelect [data-baseweb="tag"] {
         background: var(--accent) !important;
         color: var(--surface) !important;
@@ -928,44 +937,60 @@ Be professional, objective, and insightful."""
 
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
+
+    # ── 处理 pending question（快捷按钮点击后存入 session_state，下一轮 rerun 时执行）
+    if st.session_state.get('_pending_question'):
+        question = st.session_state.pop('_pending_question')
+        with st.spinner("🤖 AI is thinking..."):
+            handle_user_question(question, selected_tickers, client)
+        st.rerun()
+
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    
+
+    # ── 快捷按钮（只在没有对话历史时展示，或始终展示均可；此处始终展示）
     st.markdown("**🚀 Quick Questions:**")
-    col1, col2, col3, col4 = st.columns(4)
-    
     quick_questions = {
         "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
-        "🔬 R&D Pipeline": f"Evaluate the R&D pipeline and clinical trials of {', '.join(selected_tickers)}.",
-        "⚠️ Investment Risks": f"What are the main investment risks for {', '.join(selected_tickers)}?",
-        "📈 Future Trends": f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
+        "🔬 R&D Pipeline":      f"Evaluate the R&D pipeline and clinical trials of {', '.join(selected_tickers)}.",
+        "⚠️ Investment Risks":  f"What are the main investment risks for {', '.join(selected_tickers)}?",
+        "📈 Future Trends":     f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
     }
-    
-    cols = [col1, col2, col3, col4]
+    col1, col2, col3, col4 = st.columns(4)
     for idx, (btn_text, question) in enumerate(quick_questions.items()):
-        with cols[idx]:
+        with [col1, col2, col3, col4][idx]:
             if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                with st.spinner("🤖 AI is thinking..."):
-                    handle_user_question(question, selected_tickers, client)
+                st.session_state['_pending_question'] = question
                 st.rerun()
-    
+
+    # ── 对话历史
     display_chat_history()
-    
+
+    # ── 输入框（用普通 text_input + 按钮，避免 chat_input 产生浮动白框）
     st.markdown("---")
-    st.markdown("**✍️ Or ask your own question:**")
-    user_input = st.chat_input("e.g., Which company has the strongest pipeline?")
-    
-    if user_input:
+    col_inp, col_send = st.columns([5, 1])
+    with col_inp:
+        user_input = st.text_input(
+            "question",
+            placeholder="e.g., Which company has the strongest pipeline?",
+            label_visibility="collapsed",
+            key="chat_text_input"
+        )
+    with col_send:
+        send_btn = st.button("Send", type="primary", use_container_width=True, key="chat_send")
+
+    if send_btn and user_input:
         with st.spinner("🤖 AI is thinking..."):
             handle_user_question(user_input, selected_tickers, client)
         st.rerun()
-    
+
+    # ── 清空历史
     if st.session_state.chat_history:
-        col_clear1, col_clear2, col_clear3 = st.columns([1, 1, 1])
-        with col_clear2:
+        _, col_clear, _ = st.columns([1, 1, 1])
+        with col_clear:
             if st.button("Clear Chat History", key="clear_chat", use_container_width=True):
                 st.session_state.chat_history = []
                 st.rerun()
-    
+
     st.markdown('</div>', unsafe_allow_html=True)
 # ==========================================
 TIME_RANGE_MAP = {
@@ -2260,7 +2285,7 @@ if should_show_analysis:
                                     full_response += content
                                     response_placeholder.markdown(full_response + "▌")
                             
-                            response_placeholder.markdown(full_response)
+                            response_placeholder.empty()
                             st.session_state.ai_report = full_response
                             st.session_state.analysis_completed = True
                             st.session_state.analyzed_tickers = tickers.copy()
