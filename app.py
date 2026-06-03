@@ -48,8 +48,6 @@ if '_saved_tickers' in st.session_state:
 # --- 初始化 Session State（新增）---
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
-if 'chat_history' not in st.session_state:
-    st.session_state.chat_history = []
 if 'analysis_context' not in st.session_state:
     st.session_state.analysis_context = None
 if 'show_chat' not in st.session_state:
@@ -919,9 +917,7 @@ Be professional, objective, and insightful."""
             "content": msg["content"]
         })
     
-    # 获取 AI 回答
-    with st.spinner("🤔 AI is thinking..."):
-        answer = get_ai_response(messages, client)
+    answer = get_ai_response(messages, client)
     
     # 添加 AI 回答到历史
     st.session_state.chat_history.append({
@@ -932,45 +928,41 @@ Be professional, objective, and insightful."""
 
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
-    st.markdown("---")
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    st.markdown("### 💬 继续追问 AI 分析师")
     
-    # 快速提问按钮
-    st.markdown("**🚀 快速提问：**")
+    st.markdown("**🚀 Quick Questions:**")
     col1, col2, col3, col4 = st.columns(4)
     
     quick_questions = {
-        "📊 详细解释财务指标": "请详细解释这些公司的主要财务指标，包括市盈率、市净率、ROE等的含义和投资意义。",
-        "🔬 分析研发管线": "请分析这些公司的研发管线和在研药物情况，哪些最有潜力？",
-        "⚠️ 评估投资风险": "这些公司的主要投资风险有哪些？市场、监管、竞争等方面？",
-        "📈 预测未来趋势": "基于当前数据，预测这些公司未来6-12个月的发展趋势。"
+        "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
+        "🔬 R&D Pipeline": f"Evaluate the R&D pipeline and clinical trials of {', '.join(selected_tickers)}.",
+        "⚠️ Investment Risks": f"What are the main investment risks for {', '.join(selected_tickers)}?",
+        "📈 Future Trends": f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
     }
     
     cols = [col1, col2, col3, col4]
     for idx, (btn_text, question) in enumerate(quick_questions.items()):
         with cols[idx]:
             if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                handle_user_question(question, selected_tickers, client)
+                with st.spinner("🤖 AI is thinking..."):
+                    handle_user_question(question, selected_tickers, client)
                 st.rerun()
     
-    # 显示对话历史
     display_chat_history()
     
-    # 自定义问题输入
     st.markdown("---")
-    st.markdown("**✍️ 或输入你的问题：**")
-    user_input = st.chat_input("例如：这些公司中哪个最值得长期持有？")
+    st.markdown("**✍️ Or ask your own question:**")
+    user_input = st.chat_input("e.g., Which company has the strongest pipeline?")
     
     if user_input:
-        handle_user_question(user_input, selected_tickers, client)
+        with st.spinner("🤖 AI is thinking..."):
+            handle_user_question(user_input, selected_tickers, client)
         st.rerun()
     
-    # 清空对话按钮
     if st.session_state.chat_history:
         col_clear1, col_clear2, col_clear3 = st.columns([1, 1, 1])
         with col_clear2:
-            if st.button("🗑️ 清空对话历史", key="clear_chat", use_container_width=True):
+            if st.button("Clear Chat History", key="clear_chat", use_container_width=True):
                 st.session_state.chat_history = []
                 st.rerun()
     
@@ -1295,7 +1287,7 @@ def calculate_bollinger_bands(data, period=20, std_dev=2):
 @st.cache_data(ttl=300)
 def get_data(user_tickers, period):
     target_tickers = list(set(user_tickers + ['SPY']))
-    data = yf.download(target_tickers, period=period, auto_adjust=True, threads=False)
+    data = yf.download(target_tickers, period=period, auto_adjust=True, threads=False, progress=False)
     
     if isinstance(data.columns, pd.MultiIndex):
         try:
@@ -1834,7 +1826,19 @@ if should_show_analysis:
             st.session_state.is_refreshing = False
             st.session_state.analysis_started = True # 确保分析状态保持为 True
             
-            if not prices.empty:
+            if prices.empty:
+                get_data.clear()  # bust the bad cache entry
+                st.error(
+                    "Could not load market data. "
+                    "Yahoo Finance may be temporarily unavailable or the ticker symbols are invalid."
+                )
+                col_a, col_b, col_c = st.columns([1,1,1])
+                with col_b:
+                    if st.button("Retry", type="primary", use_container_width=True):
+                        st.session_state.analysis_started = False
+                        get_data.clear()
+                        st.rerun()
+            elif not prices.empty:
                 triggered = check_price_alerts(prices)
                 if triggered:
                     for alert in triggered:
@@ -2265,6 +2269,9 @@ if should_show_analysis:
                 
                 if st.session_state.ai_report:
                     st.markdown("---")
+
+                    with st.expander("Investment Memo", expanded=True):
+                        st.markdown(st.session_state.ai_report)
                     
                     st.markdown('<div class="section-title">Export Options</div>', unsafe_allow_html=True)
                     
@@ -2406,74 +2413,11 @@ if st.session_state.get('analysis_completed', False):
     st.markdown('<div class="section-title">💬 Continue Discussion with AI Analyst</div>', unsafe_allow_html=True)
     
     try:
-        # 获取已分析的股票
         analyzed_tickers = st.session_state.get('analyzed_tickers', [])
         
         if analyzed_tickers and len(analyzed_tickers) > 0:
-            # 初始化客户端
             chat_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
-            
-            # 快速提问按钮
-            st.markdown("**🚀 Quick Questions:**")
-            col1, col2, col3, col4 = st.columns(4)
-
-            quick_questions = {
-            "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(analyzed_tickers)} in detail.",
-            "🔬 R&D Pipeline": f"Evaluate the R&D pipeline and clinical trials of {', '.join(analyzed_tickers)}.",
-            "⚠️ Investment Risks": f"What are the main investment risks for {', '.join(analyzed_tickers)}?",
-            "📈 Future Trends": f"Predict market trends for {', '.join(analyzed_tickers)} in next 6-12 months."
-            }
-
-            cols = [col1, col2, col3, col4]
-            for idx, (btn_text, question) in enumerate(quick_questions.items()):
-                with cols[idx]:
-                    if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                        # --- 新增：点击快速提问时，清空之前的历史，只显示当前结果 ---
-                        st.session_state.chat_history = [] 
-                        with st.spinner("🤖 AI is thinking..."):
-                            handle_user_question(question, analyzed_tickers, chat_client)
-                        st.rerun()
-
-
-            
-            # 显示对话历史
-            if st.session_state.chat_history:
-                st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
-                st.markdown("### 💬 Chat History")
-                
-                for msg in st.session_state.chat_history:
-                    if msg['role'] == 'user':
-                        st.markdown(f'''
-                        <div class="chat-message user">
-                            <div class="chat-header">👤 Your Question</div>
-                            <div>{msg['content']}</div>
-                        </div>
-                        ''', unsafe_allow_html=True)
-                    else:
-                        st.markdown(f'''
-                        <div class="chat-message assistant">
-                            <div class="chat-header">🤖 AI Response</div>
-                            <div>{msg['content']}</div>
-                        </div>
-                        ''', unsafe_allow_html=True)
-            
-            # 自定义问题输入
-            st.markdown("---")
-            st.markdown("**✍️ Or ask your own question:**")
-            user_input = st.chat_input("e.g., Which company has the strongest pipeline?")
-            
-            if user_input:
-                with st.spinner("🤖 AI is thinking..."):
-                    handle_user_question(user_input, analyzed_tickers, chat_client)
-                st.rerun()
-            
-            # 清空对话按钮
-            if st.session_state.chat_history:
-                col_clear1, col_clear2, col_clear3 = st.columns([1, 1, 1])
-                with col_clear2:
-                    if st.button("🗑️ Clear Chat History", key="clear_chat", use_container_width=True):
-                        st.session_state.chat_history = []
-                        st.rerun()
+            add_chat_interface(analyzed_tickers, chat_client)
                         
     except Exception as e:
         st.error(f"Chat feature error: {str(e)}")
