@@ -937,10 +937,9 @@ Be professional, objective, and insightful."""
 
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-    # ── 快捷按钮：点击后存入 session_state 并 rerun，
-    #    真正的 AI 调用在本次 rerun 最顶部（UI 渲染前）完成，避免双重渲染
+    # ── 快捷按钮：先渲染所有按钮，收集点击结果，再统一处理
+    #    不调用 st.rerun()，避免双重渲染和按钮重复问题
     st.markdown("**🚀 Quick Questions:**")
     quick_questions = {
         "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
@@ -949,16 +948,29 @@ def add_chat_interface(selected_tickers, client):
         "📈 Future Trends":     f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
     }
     col1, col2, col3, col4 = st.columns(4)
+    clicked_question = None
     for idx, (btn_text, question) in enumerate(quick_questions.items()):
         with [col1, col2, col3, col4][idx]:
             if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                st.session_state['_pending_question'] = question
-                st.rerun()
+                clicked_question = question
 
-    # ── 对话历史
+    # 处理快捷按钮点击（spinner 在按钮下方展示，不触发 rerun）
+    if clicked_question:
+        with st.spinner("🤖 AI is thinking..."):
+            handle_user_question(clicked_question, selected_tickers, client)
+
+    # ── 对话历史（含刚刚生成的回复）
     display_chat_history()
 
-    # ── 输入框（普通 text_input + 按钮，无浮动白框）
+    # ── 清空历史
+    if st.session_state.chat_history:
+        _, col_clear, _ = st.columns([1, 1, 1])
+        with col_clear:
+            if st.button("Clear Chat History", key="clear_chat", use_container_width=True):
+                st.session_state.chat_history = []
+                st.rerun()
+
+    # ── 自定义输入框（text_input + Send 按钮；rerun 仅用于清空输入框）
     st.markdown("---")
     col_inp, col_send = st.columns([5, 1])
     with col_inp:
@@ -972,19 +984,11 @@ def add_chat_interface(selected_tickers, client):
         send_btn = st.button("Send", type="primary", use_container_width=True, key="chat_send")
 
     if send_btn and user_input:
-        st.session_state['_pending_question'] = user_input
+        with st.spinner("🤖 AI is thinking..."):
+            handle_user_question(user_input, selected_tickers, client)
+        # 自增 key 以清空输入框，然后 rerun
         st.session_state['_chat_ver'] = st.session_state.get('_chat_ver', 0) + 1
         st.rerun()
-
-    # ── 清空历史
-    if st.session_state.chat_history:
-        _, col_clear, _ = st.columns([1, 1, 1])
-        with col_clear:
-            if st.button("Clear Chat History", key="clear_chat", use_container_width=True):
-                st.session_state.chat_history = []
-                st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
 # ==========================================
 TIME_RANGE_MAP = {
     "3mo": "Last 3 Months",
@@ -1584,14 +1588,6 @@ def color_return(val):
         return ''
 
 # ==================== 主界面 ====================
-
-# ── 在任何 UI 渲染之前处理 pending question（避免 spinner + rerun 产生双重渲染）
-if st.session_state.get('_pending_question') and st.session_state.get('analyzed_tickers'):
-    _pq = st.session_state.pop('_pending_question')
-    _pq_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
-    with st.spinner("🤖 AI is thinking..."):
-        handle_user_question(_pq, st.session_state['analyzed_tickers'], _pq_client)
-# ──────────────────────────────────────────────
 
 # ---- 品牌 Header ----
 now = datetime.now()
