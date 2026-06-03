@@ -95,12 +95,15 @@ st.markdown("""
         --red-l:        #fdf0f0;
     }
 
-    /* ---- Streamlit chrome cleanup ---- */
+    /* ---- Streamlit chrome cleanup ----
+       WARNING: do NOT hide stToolbar or stDecoration — these contain the
+       sidebar toggle button. Only hide specific elements we don't need. */
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
-    [data-testid="stToolbar"] {display: none !important;}
-    /* NOTE: stDecoration must NOT be hidden — it contains the sidebar expand button */
     [data-testid="stStatusWidget"] {display: none !important;}
+    /* Hide only the deploy/share buttons inside the toolbar, not the toolbar itself */
+    [data-testid="stToolbarActionButtonIcon"] {display: none !important;}
+    [data-testid="stToolbar"] [data-testid="baseButton-header"] {display: none !important;}
 
     /* ---- Page background ---- */
     [data-testid="stAppViewContainer"],
