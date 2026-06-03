@@ -66,226 +66,134 @@ if 'analyzed_tickers' not in st.session_state:
     st.session_state.analyzed_tickers = []
 # ======================================
 
-# --- 自定义 CSS 样式（Anthropic 暖色调 + Biotech 绿点缀）---
+# --- 自定义 CSS 样式（Anthropic Editorial × Pharma Data Terminal）---
 st.markdown("""
 <style>
-    /* --- Google Fonts: Crimson Pro (serif) + Inter (sans-serif) --- */
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap');
 
-    /* ============================================================
-       Anthropic-inspired warm palette, adapted for biotech
-       Accent: Biotech Sage Green instead of Terracotta
-       ============================================================ */
-    
-    /* --- Typography: Claude's serif-forward hierarchy ---
-       Headings & body → Crimson Pro serif
-       Numbers → Inter sans-serif + tabular-nums for alignment
-       Georgia and system-ui are the reliable fallbacks --- */
-    
+    /* =====================================================================
+       DESIGN SYSTEM: Anthropic Editorial × Pharma Data Terminal
+       Palette: Warm Off-White · Biotech Sage Green · Warm Black
+       Typography: Crimson Pro (headings) · Inter (UI) · Mono (numbers)
+       ===================================================================== */
+
     :root {
-        --color-bg: #f5f4ed;
-        --color-surface: #faf9f5;
-        --color-text: #141413;
-        --color-text-secondary: #5e5d59;
-        --color-text-tertiary: #87867f;
-        --color-border: #f0eee6;
-        --color-border-warm: #e8e6dc;
-        --color-accent: #4a7c59;
-        --color-accent-hover: #5d8f6e;
-        --color-accent-light: #e8f0ea;
-        --color-sand: #e8e6dc;
-        --color-sand-hover: #dcd9cd;
-        --color-dark: #30302e;
-        --color-positive: #4a7c59;
-        --color-negative: #b53333;
-        --color-neutral: #8a7340;
+        --bg:           #f5f4ed;
+        --surface:      #faf9f5;
+        --surface-2:    #f0eee6;
+        --text:         #141413;
+        --text-2:       #4d4c48;
+        --text-3:       #87867f;
+        --border:       #e8e6dc;
+        --border-2:     #d1cfc5;
+        --accent:       #4a7c59;
+        --accent-h:     #5d8f6e;
+        --accent-l:     #eaf3de;
+        --gold:         #8a7340;
+        --gold-l:       #faf0dc;
+        --red:          #b53333;
+        --red-l:        #fdf0f0;
     }
-    
-    /* --- Hide Streamlit default UI chrome ---
-       DEBUG: removing all hides temporarily to isolate the sidebar issue */
-    /* #MainMenu {visibility: hidden !important;} */
-    /* footer {visibility: hidden !important;} */
-    /* [data-testid="stToolbar"] {display: none !important;} */
-    /* [data-testid="stDecoration"] {display: none !important;} */
-    /* [data-testid="stStatusWidget"] {display: none !important;} */
-    
-    /* --- Page-level background --- */
-    [data-testid="stAppViewContainer"] {
-        background: #f5f4ed;
+
+    /* ---- Streamlit chrome cleanup ---- */
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+
+    /* ---- Page background ---- */
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"], .main {
+        background: var(--bg) !important;
         font-variant-numeric: tabular-nums;
     }
-    [data-testid="stAppViewContainer"] > .block-container {
-        padding-top: 2rem;
+    [data-testid="stAppViewContainer"] > .block-container,
+    .block-container {
+        padding-top: 1.5rem !important;
     }
-    
-    /* --- Typography (Anthropic's serif-forward hierarchy) --- */
-    .main-title {
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
-        color: #141413;
-        font-size: 2.6rem;
-        font-weight: 500;
-        text-align: center;
-        margin-bottom: 0.2rem;
-        letter-spacing: -0.3px;
-        line-height: 1.10;
-    }
-    
-    .subtitle {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        text-align: center;
-        color: #87867f;
-        font-size: 0.95rem;
-        margin-bottom: 2.5rem;
-        font-weight: 400;
-        line-height: 1.6;
-    }
-    
-    .section-title {
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
-        font-size: 1.35rem;
-        font-weight: 500;
-        color: #141413;
-        margin: 2.5rem 0 0.8rem 0;
-        padding-bottom: 0.4rem;
-        border-bottom: 1px solid #e8e6dc;
-        line-height: 1.15;
-    }
-    
-    h1, h2, h3, h4 {
+
+    /* =====================================================================
+       HEADING OVERRIDES — highest specificity to beat Streamlit's injected
+       #667eea / #7c3aed purple defaults
+       ===================================================================== */
+    h1, h2, h3, h4, h5, h6,
+    .main h1, .main h2, .main h3, .main h4,
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stVerticalBlock"] h1,
+    [data-testid="stVerticalBlock"] h2,
+    [data-testid="stVerticalBlock"] h3,
+    [data-testid="stVerticalBlock"] h4,
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4,
+    .element-container h1, .element-container h2,
+    .element-container h3, .element-container h4 {
         font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
         font-weight: 500 !important;
-        color: #141413 !important;
+        color: var(--text) !important;
         line-height: 1.15 !important;
+        border-bottom-color: var(--border) !important;
     }
-    
-    /* --- Price Cards --- */
-    .price-card {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background: #faf9f5;
-        padding: 1.2rem;
-        border-radius: 12px;
-        box-shadow: 0px 0px 0px 1px #f0eee6;
-        border-left: 4px solid;
-        margin: 0.5rem 0;
-        transition: all 0.2s ease;
+
+    /* =====================================================================
+       BUTTON OVERRIDES — target both old [kind] attr and new data-testid
+       ===================================================================== */
+    [data-testid="baseButton-primary"],
+    button[kind="primary"],
+    .stButton > button[kind="primary"],
+    .stButton > button[data-testid="baseButton-primary"] {
+        background: var(--accent) !important;
+        border-color: var(--accent) !important;
+        color: var(--surface) !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        transition: background 0.18s ease, border-color 0.18s ease !important;
+        box-shadow: none !important;
     }
-    
-    .price-card:hover {
-        box-shadow: rgba(0,0,0,0.05) 0px 4px 24px;
+    [data-testid="baseButton-primary"]:hover,
+    button[kind="primary"]:hover,
+    .stButton > button[kind="primary"]:hover {
+        background: var(--accent-h) !important;
+        border-color: var(--accent-h) !important;
     }
-    
-    .price-card.positive {
-        border-left-color: #4a7c59;
+
+    [data-testid="baseButton-secondary"],
+    button[kind="secondary"],
+    .stButton > button:not([kind="primary"]):not([data-testid="collapsedControl"]),
+    .stButton > button[data-testid="baseButton-secondary"] {
+        background: var(--surface-2) !important;
+        border: 1px solid var(--border-2) !important;
+        color: var(--text-2) !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        transition: background 0.15s ease !important;
+        box-shadow: none !important;
     }
-    
-    .price-card.negative {
-        border-left-color: #b53333;
+    [data-testid="baseButton-secondary"]:hover,
+    .stButton > button:not([kind="primary"]):not([data-testid="collapsedControl"]):hover {
+        background: var(--border) !important;
+        color: var(--text) !important;
+        border-color: var(--border-2) !important;
     }
-    
-    .card-ticker {
-        font-size: 0.8rem;
-        color: #87867f;
-        font-weight: 500;
-        margin-bottom: 0.3rem;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Download button — same as primary */
+    [data-testid="stDownloadButton"] button {
+        background: var(--accent) !important;
+        border-color: var(--accent) !important;
+        color: var(--surface) !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
     }
-    
-    .card-price {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        font-variant-numeric: tabular-nums;
-        font-size: 1.8rem;
-        font-weight: 500;
-        margin: 0.3rem 0;
+    [data-testid="stDownloadButton"] button:hover {
+        background: var(--accent-h) !important;
     }
-    
-    .card-change {
-        font-size: 0.85rem;
-        font-weight: 500;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        font-variant-numeric: tabular-nums;
-    }
-    
-    /* --- Status Badges --- */
-    .status-badge {
-        display: inline-block;
-        padding: 0.2rem 0.7rem;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        margin: 0.2rem;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    
-    .status-bullish {
-        background: #e8f0ea;
-        color: #3d6b4e;
-        box-shadow: 0px 0px 0px 1px #4a7c59;
-    }
-    
-    .status-bearish {
-        background: #faf0f0;
-        color: #9b2c2c;
-        box-shadow: 0px 0px 0px 1px #b53333;
-    }
-    
-    .status-neutral {
-        background: #faf7f0;
-        color: #8a7340;
-        box-shadow: 0px 0px 0px 1px #c4a64a;
-    }
-    
-    /* --- Sidebar --- */
-    [data-testid="stSidebar"] {
-        background: #faf9f5;
-        border-right: 1px solid #f0eee6;
-    }
-    [data-testid="stSidebar"] .stMarkdown p,
-    [data-testid="stSidebar"] .stMarkdown span,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] .st-cb,
-    [data-testid="stSidebar"] .st-bb,
-    [data-testid="stSidebar"] .st-bc,
-    [data-testid="stSidebar"] .st-cd,
-    [data-testid="stSidebar"] .stButton,
-    [data-testid="stSidebar"] .stSelectbox,
-    [data-testid="stSidebar"] .stTextInput,
-    [data-testid="stSidebar"] .stMultiSelect {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
-    }
-    
-    /* --- Buttons (exclude Streamlit chrome buttons to preserve icon fonts) --- */
-    .stButton>button:not([data-testid="collapsedControl"]) {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        background: #e8e6dc;
-        color: #4d4c48;
-        border: none;
-        box-shadow: 0px 0px 0px 1px #d1cfc5;
-    }
-    
-    .stButton>button:not([data-testid="collapsedControl"]):hover {
-        background: #dcd9cd;
-        box-shadow: 0px 0px 0px 1px #c2c0b6;
-        color: #141413;
-    }
-    
-    .stButton>button[kind="primary"]:not([data-testid="collapsedControl"]) {
-        background: #4a7c59;
-        color: #faf9f5;
-        box-shadow: 0px 0px 0px 1px #4a7c59;
-    }
-    
-    .stButton>button[kind="primary"]:not([data-testid="collapsedControl"]):hover {
-        background: #5d8f6e;
-        box-shadow: 0px 0px 0px 1px #5d8f6e;
-    }
-    
-    /* Preserve Streamlit Material Icons — target sidebar controls only */
+
+    /* Preserve Streamlit Material Icons */
     [data-testid="collapsedControl"],
     [data-testid="collapsedControl"] *,
     button[aria-label="Open sidebar"],
@@ -296,215 +204,486 @@ st.markdown("""
         font-feature-settings: "liga" !important;
         -webkit-font-smoothing: antialiased !important;
     }
-    
-    /* --- Live Indicator --- */
-    .live-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background: #4a7c59;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-        margin-right: 6px;
+
+    /* =====================================================================
+       ALERT / INFO / SUCCESS / WARNING / ERROR OVERRIDES
+       Streamlit renders via [data-baseweb="notification"] and .stAlert
+       ===================================================================== */
+    [data-testid="stAlert"],
+    .stAlert,
+    [data-baseweb="notification"] {
+        border-radius: 10px !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
     }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
+    /* Info — sage green tint */
+    [data-testid="stAlert"][data-type="info"],
+    .stAlert-info {
+        background: #f0f7f3 !important;
+        border-color: var(--accent) !important;
+        color: #2d5240 !important;
     }
-    
-    /* --- Alert Card --- */
-    .alert-card {
-        background: #faf0f0;
-        padding: 0.9rem 1.1rem;
-        border-radius: 10px;
-        color: #9b2c2c;
-        margin: 0.5rem 0;
-        font-weight: 500;
-        box-shadow: 0px 0px 0px 1px #e8c8c8;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* Success — lighter green */
+    [data-testid="stAlert"][data-type="success"],
+    .stAlert-success {
+        background: var(--accent-l) !important;
+        border-color: #3d6b4e !important;
+        color: #2d5240 !important;
     }
-    
-    hr {
-        margin: 2rem 0;
-        border: none;
-        border-top: 1px solid #e8e6dc;
+    /* Error — warm red */
+    [data-testid="stAlert"][data-type="error"],
+    .stAlert-error {
+        background: var(--red-l) !important;
+        border-color: var(--red) !important;
+        color: #7a2323 !important;
     }
-    
-    .dataframe {
-        font-size: 0.85rem;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* Warning — gold */
+    [data-testid="stAlert"][data-type="warning"],
+    .stAlert-warning {
+        background: var(--gold-l) !important;
+        border-color: var(--gold) !important;
+        color: #5a4a22 !important;
     }
-    
-    /* --- Selection Summary --- */
-    .selection-summary {
-        background: #faf9f5;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0px 0px 0px 1px #f0eee6;
-        margin: 1rem 0;
-    }
-    .selection-summary h3 {
-        color: #141413 !important;
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
-    }
-    
-    .ticker-tag {
-        display: inline-block;
-        background: #4a7c59;
-        color: #faf9f5;
-        padding: 0.25rem 0.55rem;
-        border-radius: 6px;
-        margin: 0.15rem;
-        font-size: 0.8rem;
-        font-weight: 500;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    
-    .ticker-tag.custom {
-        background: #8a7340;
-    }
-    
-    /* --- Chat Interface --- */
-    .chat-container {
-        background: #faf9f5;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-        box-shadow: 0px 0px 0px 1px #f0eee6;
-    }
-    
-    .chat-message {
-        background: #f5f4ed;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.8rem 0;
-        box-shadow: 0px 0px 0px 1px #f0eee6;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        font-variant-numeric: tabular-nums;
-    }
-    
-    .chat-message.user {
-        background: #faf9f5;
-        border-left: 3px solid #4a7c59;
-    }
-    
-    .chat-message.assistant {
-        background: #f5f4ed;
-        border-left: 3px solid #8a7340;
-    }
-    
-    .chat-message.assistant .chat-header + div,
-    .chat-message.assistant p {
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
-        font-variant-numeric: tabular-nums;
-        font-size: 1.02rem;
-        line-height: 1.65;
-        color: #141413;
-    }
-    
-    .chat-header {
-        font-weight: 500;
-        color: #5e5d59;
-        margin-bottom: 0.5rem;
-        font-size: 0.85rem;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    
-    .chat-divider {
-        border-top: 1px solid #e8e6dc;
-        margin: 1.5rem 0;
-    }
-    
-    /* --- News Links --- */
-    .news-link-container {
-        margin: 0.3rem 0;
-    }
-    
-    .news-link {
-        display: inline-block;
-        padding: 0.45rem 0.9rem;
-        background: #faf9f5;
-        border-left: 3px solid #4a7c59;
-        border-radius: 6px;
-        text-decoration: none;
-        color: #4d4c48;
-        transition: all 0.2s ease;
-        width: 100%;
-        box-sizing: border-box;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        font-size: 0.85rem;
-        box-shadow: 0px 0px 0px 1px #f0eee6;
-    }
-    
-    .news-link:hover {
-        background: #e8f0ea;
-        box-shadow: 0px 0px 0px 1px #4a7c59;
-        color: #141413;
-    }
-    
-    .official-link {
-        border-left-color: #8a7340;
-    }
-    
-    .official-link:hover {
-        border-left-color: #6b5a2e;
-    }
-    
-    /* --- General overrides (targeted, not global) --- */
-    .stMarkdown p, .stMarkdown span, .stMarkdown li, .stMarkdown label {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-    .stMarkdown p, .stMarkdown li {
-        color: #4d4c48;
+    [data-testid="stAlert"] p, .stAlert p {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-size: 0.88rem !important;
     }
 
-    /* --- AI Report body: serif for prose, tabular-nums for data --- */
+    /* =====================================================================
+       SIDEBAR
+       ===================================================================== */
+    [data-testid="stSidebar"] {
+        background: var(--surface) !important;
+        border-right: 0.5px solid var(--border) !important;
+    }
+    [data-testid="stSidebar"] * {
+        font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        color: var(--text) !important;
+    }
+    [data-testid="stSidebar"] .stTabs [data-baseweb="tab-border"] {
+        background-color: var(--accent) !important;
+    }
+    [data-testid="stSidebar"] .stTabs [aria-selected="true"] {
+        color: var(--accent) !important;
+    }
+    [data-testid="stSidebar"] .stCaption,
+    [data-testid="stSidebar"] small {
+        color: var(--text-3) !important;
+        font-size: 0.78rem !important;
+    }
+
+    /* =====================================================================
+       TABS
+       ===================================================================== */
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        color: var(--text-3) !important;
+        font-size: 0.85rem !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: var(--accent) !important;
+        font-weight: 500 !important;
+    }
+    .stTabs [data-baseweb="tab-border"] {
+        background-color: var(--accent) !important;
+    }
+
+    /* =====================================================================
+       FORM INPUTS
+       ===================================================================== */
+    .stSelectbox label, .stMultiSelect label,
+    .stTextInput label, .stNumberInput label {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        color: var(--text-3) !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.02em !important;
+        text-transform: uppercase !important;
+    }
+    [data-baseweb="select"] > div,
+    .stTextInput > div > div > input {
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+        border-radius: 8px !important;
+    }
+    .stMultiSelect [data-baseweb="tag"] {
+        background: var(--accent) !important;
+        color: var(--surface) !important;
+        border-radius: 4px !important;
+    }
+
+    /* =====================================================================
+       EXPANDER
+       ===================================================================== */
+    .stExpander {
+        border: 0.5px solid var(--border) !important;
+        border-radius: 10px !important;
+        background: var(--surface) !important;
+    }
+    .stExpander > div:first-child {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        color: var(--text-2) !important;
+    }
+
+    /* =====================================================================
+       STATUS COMPONENT (AI analysis streaming)
+       ===================================================================== */
+    [data-testid="stStatus"] {
+        background: var(--surface) !important;
+        border: 0.5px solid var(--border) !important;
+        border-radius: 10px !important;
+    }
     [data-testid="stStatus"] .stMarkdown p,
     [data-testid="stStatus"] .stMarkdown li,
     [data-testid="stStatus"] .stMarkdown h1,
     [data-testid="stStatus"] .stMarkdown h2,
     [data-testid="stStatus"] .stMarkdown h3 {
-        font-family: 'Crimson Pro', 'Georgia', 'Times New Roman', serif !important;
-        font-variant-numeric: tabular-nums;
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        font-variant-numeric: tabular-nums !important;
+        color: var(--text) !important;
     }
     [data-testid="stStatus"] .stMarkdown p {
-        font-size: 1.05rem;
-        line-height: 1.7;
-        color: #141413;
+        font-size: 1.05rem !important;
+        line-height: 1.72 !important;
+    }
+
+    /* =====================================================================
+       DATAFRAME / TABLE
+       ===================================================================== */
+    .stDataFrame, .dataframe {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-size: 0.82rem !important;
+        font-variant-numeric: tabular-nums !important;
+    }
+
+    /* =====================================================================
+       GENERAL MARKDOWN
+       ===================================================================== */
+    .stMarkdown p, .stMarkdown span,
+    .stMarkdown li, .stMarkdown label {
+        font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    .stMarkdown p, .stMarkdown li {
+        color: var(--text-2) !important;
     }
     code {
         font-family: 'JetBrains Mono', 'Consolas', monospace !important;
-        background: #f0eee6;
-        padding: 0.1rem 0.3rem;
-        border-radius: 4px;
-        font-size: 0.85rem;
+        background: var(--surface-2) !important;
+        padding: 0.1rem 0.3rem !important;
+        border-radius: 4px !important;
+        font-size: 0.83rem !important;
+        color: var(--text-2) !important;
     }
-    .stMarkdown {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    hr {
+        border: none !important;
+        border-top: 0.5px solid var(--border) !important;
+        margin: 1.8rem 0 !important;
     }
-    
-    /* --- Streamlit widget overrides for Anthropic feel --- */
-    .stSelectbox label, .stMultiSelect label, .stTextInput label {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-        color: #5e5d59 !important;
-        font-size: 0.85rem !important;
+
+    /* =====================================================================
+       SCROLLBAR
+       ===================================================================== */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+    /* =====================================================================
+       CUSTOM COMPONENT STYLES
+       ===================================================================== */
+
+    /* Brand Header */
+    .brand-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 1.2rem 0 0.4rem;
+    }
+    .brand-title {
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        color: var(--text) !important;
+        font-size: 2.5rem !important;
         font-weight: 500 !important;
+        letter-spacing: -0.3px !important;
+        line-height: 1.1 !important;
+        margin: 0 !important;
+        text-align: center !important;
     }
-    .stExpander {
-        border: 1px solid #f0eee6 !important;
-        border-radius: 10px !important;
-        background: #faf9f5 !important;
+    .brand-sub {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        color: var(--text-3) !important;
+        font-size: 0.87rem !important;
+        margin: 0.25rem 0 0.5rem !important;
+        text-align: center !important;
+        letter-spacing: 0.01em !important;
     }
-    .stExpander > div:first-child {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        color: var(--accent);
+        background: var(--accent-l);
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        border: 0.5px solid #c0d9c8;
     }
-    .stTabs [data-baseweb="tab"] {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-        color: #87867f !important;
+
+    /* Section Title */
+    .section-title {
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        font-size: 1.3rem !important;
+        font-weight: 500 !important;
+        color: var(--text) !important;
+        margin: 2rem 0 0.6rem !important;
+        padding-bottom: 0.35rem !important;
+        border-bottom: 0.5px solid var(--border) !important;
+        line-height: 1.15 !important;
     }
-    .stTabs [aria-selected="true"] {
-        color: #4a7c59 !important;
+
+    /* Price Cards */
+    .price-card {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: var(--surface);
+        padding: 1rem 1.1rem;
+        border-radius: 10px;
+        box-shadow: 0 0 0 0.5px var(--border);
+        border-left: 3px solid;
+        margin: 0.4rem 0;
+        transition: box-shadow 0.18s ease;
+    }
+    .price-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.07); }
+    .price-card.positive { border-left-color: var(--accent); }
+    .price-card.negative { border-left-color: var(--red); }
+    .card-ticker {
+        font-size: 0.73rem;
+        color: var(--text-3);
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+    .card-price {
+        font-size: 1.65rem;
+        font-weight: 500;
+        margin: 0.2rem 0;
+        font-variant-numeric: tabular-nums;
+    }
+    .card-change {
+        font-size: 0.8rem;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.18rem 0.65rem;
+        border-radius: 5px;
+        font-size: 0.77rem;
+        font-weight: 500;
+        margin: 0.15rem;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    .status-bullish {
+        background: var(--accent-l);
+        color: #2d5240;
+        box-shadow: 0 0 0 0.5px #b5d9bd;
+    }
+    .status-bearish {
+        background: var(--red-l);
+        color: #7a2323;
+        box-shadow: 0 0 0 0.5px #f0b8b8;
+    }
+    .status-neutral {
+        background: var(--gold-l);
+        color: #5a4a22;
+        box-shadow: 0 0 0 0.5px #e0cc98;
+    }
+
+    /* Ticker Tags */
+    .ticker-tag {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--surface);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        margin: 0.1rem;
+        font-size: 0.73rem;
+        font-weight: 600;
+        font-family: 'Inter', system-ui, sans-serif;
+        letter-spacing: 0.03em;
+    }
+    .ticker-tag.custom { background: var(--gold); }
+
+    /* Alert Card */
+    .alert-card {
+        background: var(--red-l);
+        padding: 0.85rem 1rem;
+        border-radius: 9px;
+        color: #7a2323;
+        margin: 0.4rem 0;
+        font-weight: 500;
+        box-shadow: 0 0 0 0.5px #f0b8b8;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 0.88rem;
+    }
+
+    /* Live dot */
+    .live-dot {
+        display: inline-block;
+        width: 7px; height: 7px;
+        background: var(--accent);
+        border-radius: 50%;
+        animation: pulse 2.2s infinite;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.25; }
+    }
+
+    /* Selection Summary */
+    .selection-summary {
+        background: var(--surface);
+        padding: 1.3rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 0 0 0.5px var(--border);
+        margin: 0.8rem 0;
+    }
+    .selection-summary h3 {
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        color: var(--text) !important;
+        font-weight: 500 !important;
+        margin: 0 0 0.8rem !important;
+        font-size: 1.2rem !important;
+        border-bottom: none !important;
+    }
+    .selection-summary p {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        color: var(--text-2) !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* Chat Interface */
+    .chat-container {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 1.3rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 0 0 0.5px var(--border);
+    }
+    .chat-message {
+        padding: 0.9rem 1rem;
+        border-radius: 8px;
+        margin: 0.7rem 0;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    .chat-message.user {
+        background: var(--surface);
+        border-left: 2.5px solid var(--accent);
+        box-shadow: 0 0 0 0.5px var(--border);
+    }
+    .chat-message.assistant {
+        background: var(--bg);
+        border-left: 2.5px solid var(--gold);
+        box-shadow: 0 0 0 0.5px var(--border);
+    }
+    .chat-message.assistant p {
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        font-size: 1.02rem !important;
+        line-height: 1.68 !important;
+        color: var(--text) !important;
+    }
+    .chat-header {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-3);
+        margin-bottom: 0.4rem;
+        font-family: 'Inter', system-ui, sans-serif;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .chat-divider {
+        border-top: 0.5px solid var(--border);
+        margin: 1.2rem 0;
+    }
+
+    /* News Links */
+    .news-link-container { margin: 0 0 4px; }
+    .news-link {
+        display: flex;
+        align-items: center;
+        padding: 0.38rem 0.85rem;
+        background: var(--surface);
+        border-left: 2.5px solid var(--accent);
+        border-radius: 0 6px 6px 0;
+        text-decoration: none;
+        color: var(--text-2);
+        transition: all 0.15s ease;
+        width: 100%;
+        box-sizing: border-box;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 0.82rem;
+        box-shadow: 0 0 0 0.5px var(--border);
+    }
+    .news-link:hover {
+        background: var(--accent-l);
+        box-shadow: 0 0 0 0.5px #b5d9bd;
+        color: var(--text);
+    }
+    .official-link { border-left-color: var(--gold); }
+    .official-link:hover {
+        background: var(--gold-l);
+        box-shadow: 0 0 0 0.5px #e0cc98;
+    }
+
+    /* Welcome Cards */
+    .welcome-card {
+        background: var(--surface);
+        border: 0.5px solid var(--border);
+        border-radius: 12px;
+        padding: 1.2rem 1.3rem;
+    }
+    .welcome-card h4 {
+        font-family: 'Crimson Pro', 'Georgia', serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 500 !important;
+        color: var(--text) !important;
+        margin: 0 0 0.55rem !important;
+        border-bottom: none !important;
+    }
+    .welcome-card p, .welcome-card li {
+        font-family: 'Inter', system-ui, sans-serif !important;
+        font-size: 0.82rem !important;
+        color: var(--text-3) !important;
+        line-height: 1.55 !important;
+    }
+    .welcome-card-accent { border-top: 2.5px solid var(--accent); }
+    .welcome-card-gold   { border-top: 2.5px solid var(--gold); }
+    .welcome-card-blue   { border-top: 2.5px solid #5580a0; }
+
+    /* Disclaimer */
+    .disclaimer {
+        text-align: center;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 0.76rem;
+        color: var(--text-3);
+        padding: 1rem;
+        background: var(--surface);
+        border-radius: 9px;
+        box-shadow: 0 0 0 0.5px var(--border);
+        margin-top: 1.2rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1259,58 +1438,66 @@ def color_return(val):
 
 # ==================== 主界面 ====================
 
-# 标题
-st.markdown('<h1 class="main-title">BioMarket Tracker</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V4</p>', unsafe_allow_html=True)
+# ---- 品牌 Header ----
+now = datetime.now()
+hour = now.hour
+is_market_open = (
+    (hour == 21 and now.minute >= 30) or
+    (hour >= 22) or
+    (hour < 4)
+)
+market_status   = "Market Open"  if is_market_open else "Market Closed"
+market_dot_cls  = "live-dot"     if is_market_open else ""
+market_dot_style = (
+    "display:inline-block;width:7px;height:7px;border-radius:50%;"
+    "background:#4a7c59;animation:pulse 2.2s infinite;margin-right:5px;vertical-align:middle;"
+) if is_market_open else (
+    "display:inline-block;width:7px;height:7px;border-radius:50%;"
+    "background:#87867f;margin-right:5px;vertical-align:middle;"
+)
+current_time = now.strftime("%I:%M %p")
+current_date = now.strftime("%b %d, %Y")
 
-# ========== 英文版时间显示 ==========
-col_time1, col_time2, col_time3 = st.columns([2, 1.5, 1.5], gap="small")
+st.markdown(f"""
+<div class="brand-header">
+    <p class="brand-title">BioMarket Tracker</p>
+    <p class="brand-sub">Professional Biotech Market Intelligence Platform</p>
+    <span class="brand-badge">⬡ DeepSeek-V4 · Yahoo Finance</span>
+</div>
+""", unsafe_allow_html=True)
 
-with col_time1:
-    # 获取当前时间
-    now = datetime.now()
-    hour = now.hour
-    
-    # 判断市场状态（美股时间：21:30-04:00 北京时间）
-    if (hour == 21 and now.minute >= 30) or (hour >= 22 and hour <= 23) or (hour >= 0 and hour < 4):
-        market_text = "Market Open"
-    else:
-        market_text = "Market Closed"
-    
-    # 英文时间格式
-    current_time = now.strftime("%I:%M %p")  # 03:16 PM
-    current_date = now.strftime("%b %d, %Y")  # Feb 12, 2026
-    
-    # 显示
+# ---- 控制栏 ----
+col_status, col_refresh, col_new = st.columns([2.5, 1, 1], gap="small")
+
+with col_status:
     st.markdown(
-        f'<div style="padding: 10px 16px; background: #faf9f5; border-radius: 10px; font-size: 0.9rem; '
-        f'box-shadow: 0px 0px 0px 1px #f0eee6; font-family: Inter, system-ui, sans-serif; color: #4d4c48;">'
-        f'<span style="color: #87867f;">Market Status:</span> <b style="color: #141413;">{market_text}</b>  '
-        f'Last Update: <b style="color: #141413;">{current_time}</b>  '
-        f'<span style="color: #87867f;">{current_date}</span>'
+        f'<div style="padding:9px 16px;background:#faf9f5;border-radius:9px;'
+        f'box-shadow:0 0 0 0.5px #e8e6dc;font-family:Inter,system-ui,sans-serif;'
+        f'font-size:0.86rem;color:#4d4c48;display:flex;align-items:center;gap:10px;">'
+        f'<span><span style="{market_dot_style}"></span>'
+        f'<b style="color:#141413;">{market_status}</b></span>'
+        f'<span style="color:#d1cfc5;">|</span>'
+        f'<span style="color:#87867f;">Updated <b style="color:#141413;">{current_time}</b></span>'
+        f'<span style="color:#d1cfc5;">|</span>'
+        f'<span style="color:#87867f;">{current_date}</span>'
         f'</div>',
         unsafe_allow_html=True
     )
 
-with col_time2:
-    if st.button("Refresh", use_container_width=True, key="refresh_btn"):
-        # ✅ 强制保存所有关键状态（在 rerun 之前）
+with col_refresh:
+    if st.button("↺ Refresh", use_container_width=True, key="refresh_btn"):
         st.session_state.analysis_started = True
         st.session_state.is_refreshing = True
-        
-        # ✅ 保存当前选择（防止侧边栏重置）
         st.session_state._saved_tickers = st.session_state.selected_tickers.copy()
         st.session_state._saved_time_range = st.session_state.selected_time_range
         st.session_state._saved_custom = st.session_state.custom_tickers.copy()
         st.session_state._saved_preset = st.session_state.preset_tickers.copy()
-        
-        # 清除数据缓存
         get_data.clear()
         st.session_state.last_update = datetime.now()
         st.rerun()
 
-with col_time3:
-    if st.button(" New Analysis", use_container_width=True):
+with col_new:
+    if st.button("+ New Analysis", use_container_width=True):
         st.session_state.analysis_completed = False
         st.session_state.analyzed_tickers = []
         st.session_state.chat_history = []
@@ -1629,10 +1816,16 @@ if should_show_analysis:
                     hovermode='x unified',
                     plot_bgcolor='#faf9f5',
                     paper_bgcolor='#faf9f5',
-                    font=dict(size=11, color='#4d4c48'),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    height=450
+                    font=dict(family="Inter, system-ui, sans-serif", size=11, color='#87867f'),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                                font=dict(size=10)),
+                    height=450,
+                    margin=dict(t=30, b=40, l=50, r=20),
                 )
+                fig_perf.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                fig_perf.update_yaxes(showgrid=True, gridcolor='#f0eee6', gridwidth=0.5,
+                                      zeroline=True, zerolinecolor='#d1cfc5', zerolinewidth=1,
+                                      tickfont=dict(size=10))
                 
                 st.plotly_chart(fig_perf, use_container_width=True)
                 
@@ -1659,24 +1852,33 @@ if should_show_analysis:
                     with col1:
                         fig_rsi = go.Figure()
                         fig_rsi.add_trace(go.Scatter(
-                            x=rsi.index, y=rsi, 
-                            name='RSI', 
-                            line=dict(color='#5d7a6e', width=2.0)
+                            x=rsi.index, y=rsi,
+                            name='RSI',
+                            line=dict(color='#4a7c59', width=2.2)
                         ))
-                        fig_rsi.add_hrect(y0=70, y1=100, fillcolor="#d4a08a", opacity=0.10, line_width=0)
-                        fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#a8c8a0", opacity=0.10, line_width=0)
-                        fig_rsi.add_hline(y=70, line_dash="dash", line_color="#b53333", annotation_text="Overbought")
-                        fig_rsi.add_hline(y=30, line_dash="dash", line_color="#4a7c59", annotation_text="Oversold")
+                        fig_rsi.add_hrect(y0=70, y1=100, fillcolor="#b53333", opacity=0.06, line_width=0)
+                        fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#4a7c59", opacity=0.06, line_width=0)
+                        fig_rsi.add_hline(y=70, line_dash="dot", line_color="#b53333", line_width=1.2,
+                                          annotation_text="Overbought", annotation_font_color="#b53333",
+                                          annotation_font_size=10)
+                        fig_rsi.add_hline(y=30, line_dash="dot", line_color="#4a7c59", line_width=1.2,
+                                          annotation_text="Oversold", annotation_font_color="#4a7c59",
+                                          annotation_font_size=10)
                         fig_rsi.update_layout(
-                            title=f"RSI - {TICKER_MAP.get(tech_ticker, tech_ticker)}",
+                            title=dict(text=f"RSI — {TICKER_MAP.get(tech_ticker, tech_ticker)}",
+                                       font=dict(family="Crimson Pro, Georgia, serif", size=15, color="#141413")),
                             yaxis_title="RSI",
                             height=320,
                             hovermode='x',
                             plot_bgcolor='#faf9f5',
                             paper_bgcolor='#faf9f5',
-                            font=dict(size=11, color='#4d4c48'),
-                            showlegend=False
+                            font=dict(family="Inter, system-ui, sans-serif", size=11, color='#87867f'),
+                            showlegend=False,
+                            margin=dict(t=45, b=30, l=45, r=20),
                         )
+                        fig_rsi.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                        fig_rsi.update_yaxes(showgrid=True, gridcolor='#f0eee6', gridwidth=0.5,
+                                             zeroline=False, tickfont=dict(size=10))
                         st.plotly_chart(fig_rsi, use_container_width=True)
                         
                         current_rsi = rsi.iloc[-1]
@@ -1693,31 +1895,41 @@ if should_show_analysis:
                     with col2:
                         fig_macd = go.Figure()
                         fig_macd.add_trace(go.Scatter(
-                            x=macd.index, y=macd, 
-                            name='MACD', 
-                            line=dict(color='#5d7a6e', width=1.8)
+                            x=macd.index, y=macd,
+                            name='MACD',
+                            line=dict(color='#4a7c59', width=1.8)
                         ))
                         fig_macd.add_trace(go.Scatter(
-                            x=signal.index, y=signal, 
-                            name='Signal', 
-                            line=dict(color='#b53333', width=1.8)
+                            x=signal.index, y=signal,
+                            name='Signal',
+                            line=dict(color='#b53333', width=1.8, dash='dash')
                         ))
+                        # histogram: positive green, negative red
+                        hist_colors = ['#4a7c59' if v >= 0 else '#b53333' for v in histogram]
                         fig_macd.add_trace(go.Bar(
-                            x=histogram.index, y=histogram, 
-                            name='Histogram', 
-                            marker_color='rgba(90,85,80,0.3)'
+                            x=histogram.index, y=histogram,
+                            name='Histogram',
+                            marker_color=hist_colors,
+                            opacity=0.45
                         ))
                         fig_macd.update_layout(
-                            title=f"MACD - {TICKER_MAP.get(tech_ticker, tech_ticker)}",
+                            title=dict(text=f"MACD — {TICKER_MAP.get(tech_ticker, tech_ticker)}",
+                                       font=dict(family="Crimson Pro, Georgia, serif", size=15, color="#141413")),
                             yaxis_title="Value",
                             height=320,
                             hovermode='x',
                             plot_bgcolor='#faf9f5',
                             paper_bgcolor='#faf9f5',
-                            font=dict(size=11, color='#4d4c48'),
+                            font=dict(family="Inter, system-ui, sans-serif", size=11, color='#87867f'),
                             showlegend=True,
-                            legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5)
+                            legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5,
+                                        font=dict(size=10)),
+                            margin=dict(t=45, b=40, l=45, r=20),
                         )
+                        fig_macd.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                        fig_macd.update_yaxes(showgrid=True, gridcolor='#f0eee6', gridwidth=0.5,
+                                              zeroline=True, zerolinecolor='#d1cfc5', zerolinewidth=1,
+                                              tickfont=dict(size=10))
                         st.plotly_chart(fig_macd, use_container_width=True)
                         
                         if macd.iloc[-1] > signal.iloc[-1]:
@@ -1729,38 +1941,45 @@ if should_show_analysis:
                     
                     fig_bb = go.Figure()
                     fig_bb.add_trace(go.Scatter(
-                        x=ticker_prices.index, y=ticker_prices, 
-                        name='Price', 
-                        line=dict(color='#141413', width=2.2)
-                    ))
-                    fig_bb.add_trace(go.Scatter(
-                        x=sma.index, y=sma, 
-                        name='SMA(20)', 
-                        line=dict(color='#5d7a6e', width=1.5, dash='dash')
-                    ))
-                    fig_bb.add_trace(go.Scatter(
-                        x=upper_bb.index, y=upper_bb, 
-                        name='Upper Band', 
-                        line=dict(color='#b53333', width=1, dash='dot'),
+                        x=upper_bb.index, y=upper_bb,
+                        name='Upper Band',
+                        line=dict(color='#b53333', width=0.8, dash='dot'),
                         fill=None
                     ))
                     fig_bb.add_trace(go.Scatter(
-                        x=lower_bb.index, y=lower_bb, 
-                        name='Lower Band', 
-                        line=dict(color='#4a7c59', width=1, dash='dot'),
+                        x=lower_bb.index, y=lower_bb,
+                        name='Lower Band',
+                        line=dict(color='#4a7c59', width=0.8, dash='dot'),
                         fill='tonexty',
-                        fillcolor='rgba(74,124,89,0.06)'
+                        fillcolor='rgba(74,124,89,0.055)'
+                    ))
+                    fig_bb.add_trace(go.Scatter(
+                        x=sma.index, y=sma,
+                        name='SMA(20)',
+                        line=dict(color='#8a7340', width=1.4, dash='dash')
+                    ))
+                    fig_bb.add_trace(go.Scatter(
+                        x=ticker_prices.index, y=ticker_prices,
+                        name='Price',
+                        line=dict(color='#141413', width=2.0)
                     ))
                     fig_bb.update_layout(
-                        title=f"Bollinger Bands - {TICKER_MAP.get(tech_ticker, tech_ticker)}",
+                        title=dict(text=f"Bollinger Bands — {TICKER_MAP.get(tech_ticker, tech_ticker)}",
+                                   font=dict(family="Crimson Pro, Georgia, serif", size=15, color="#141413")),
                         yaxis_title="Price ($)",
                         height=380,
                         hovermode='x unified',
                         plot_bgcolor='#faf9f5',
                         paper_bgcolor='#faf9f5',
-                        font=dict(size=11, color='#4d4c48'),
-                        legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5)
+                        font=dict(family="Inter, system-ui, sans-serif", size=11, color='#87867f'),
+                        legend=dict(orientation="h", yanchor="top", y=-0.14, xanchor="center", x=0.5,
+                                    font=dict(size=10)),
+                        margin=dict(t=45, b=45, l=55, r=20),
                     )
+                    fig_bb.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                    fig_bb.update_yaxes(showgrid=True, gridcolor='#f0eee6', gridwidth=0.5,
+                                        zeroline=False, tickfont=dict(size=10),
+                                        tickprefix="$")
                     st.plotly_chart(fig_bb, use_container_width=True)
                 
                 st.markdown("---")
@@ -1833,9 +2052,21 @@ if should_show_analysis:
                         hovermode='closest',
                         plot_bgcolor='#faf9f5',
                         paper_bgcolor='#faf9f5',
-                        font=dict(size=11, color='#4d4c48'),
-                        showlegend=True
+                        font=dict(family="Inter, system-ui, sans-serif", size=11, color='#87867f'),
+                        showlegend=True,
+                        margin=dict(t=40, b=50, l=55, r=20),
+                        coloraxis_colorbar=dict(
+                            title="Beta",
+                            tickfont=dict(size=10),
+                            title_font=dict(size=11),
+                            len=0.7,
+                        )
                     )
+                    fig_scat.update_xaxes(showgrid=True, gridcolor='#f0eee6', gridwidth=0.5,
+                                          zeroline=False, tickfont=dict(size=10))
+                    fig_scat.update_yaxes(showgrid=True, gridcolor='#f0eee6', gridwidth=0.5,
+                                          zeroline=True, zerolinecolor='#d1cfc5', zerolinewidth=1,
+                                          tickfont=dict(size=10))
                     st.plotly_chart(fig_scat, use_container_width=True)
                 
                 with col2:
@@ -1947,13 +2178,13 @@ elif len(st.session_state.selected_tickers) > 0 and not st.session_state.analysi
     
     st.markdown(f"""
     <div class="selection-summary">
-        <h3 style="margin: 0 0 1rem 0; color: #667eea;">Analysis Configuration</h3>
-        <p style="margin: 0.5rem 0;"><b>Total Selected:</b> {len(st.session_state.selected_tickers)} stocks</p>
-        <p style="margin: 0.5rem 0; font-size: 0.9rem; color: #666;">
+        <h3>Analysis Configuration</h3>
+        <p style="margin:0.4rem 0;"><b>Total Selected:</b> {len(st.session_state.selected_tickers)} stocks</p>
+        <p style="margin:0.4rem 0;">
             <b>Custom:</b> {custom_list}<br/>
             <b>Preset:</b> {preset_list}
         </p>
-        <p style="margin: 0.5rem 0;"><b>Time Period:</b> {TIME_RANGE_MAP.get(st.session_state.selected_time_range, st.session_state.selected_time_range)}</p>
+        <p style="margin:0.4rem 0;"><b>Time Period:</b> {TIME_RANGE_MAP.get(st.session_state.selected_time_range, st.session_state.selected_time_range)}</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -1966,54 +2197,71 @@ elif len(st.session_state.selected_tickers) > 0 and not st.session_state.analysi
 
 else:
     st.markdown("---")
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
+
+    # ---- Welcome 标题 ----
+    st.markdown("""
+    <div style="text-align:center;padding:1.5rem 0 1rem;">
+        <p style="font-family:'Crimson Pro','Georgia',serif;font-size:2rem;font-weight:500;
+                  color:#141413;margin:0 0 0.4rem;">Welcome to BioMarket Tracker</p>
+        <p style="font-family:'Inter',system-ui,sans-serif;font-size:0.92rem;color:#87867f;margin:0;">
+            Select stocks from the sidebar to begin your analysis
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ---- 三列功能卡片 ----
+    wc1, wc2, wc3 = st.columns(3, gap="medium")
+
+    with wc1:
         st.markdown("""
-        <div style="text-align: center; padding: 3rem 0;">
-            <h2 style="font-family: Georgia, 'Times New Roman', serif; color: #141413; font-weight: 500;">
-            Welcome to BioMarket Tracker
-            </h2>
-            <p style="font-size: 1rem; color: #87867f; margin: 1.5rem 0; font-family: Inter, system-ui, sans-serif;">
-                Professional biotech equity analysis platform
+        <div class="welcome-card welcome-card-accent">
+            <p style="font-size:1.5rem;margin:0 0 0.5rem;">🧬</p>
+            <h4>Getting Started</h4>
+            <ol style="padding-left:1.1rem;margin:0;color:#87867f;font-size:0.82rem;line-height:1.7;">
+                <li>Open the sidebar on the left</li>
+                <li>Search by name or ticker symbol</li>
+                <li>Or pick from the preset biotech list</li>
+                <li>Choose your time period</li>
+                <li>Click <b style="color:#4a7c59;">Start Analysis</b></li>
+            </ol>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with wc2:
+        st.markdown("""
+        <div class="welcome-card welcome-card-gold">
+            <p style="font-size:1.5rem;margin:0 0 0.5rem;">📊</p>
+            <h4>Analytics Suite</h4>
+            <ul style="padding-left:1.1rem;margin:0;color:#87867f;font-size:0.82rem;line-height:1.7;">
+                <li>Normalized price performance chart</li>
+                <li>RSI · MACD · Bollinger Bands</li>
+                <li>Risk-Return frontier (Beta, Sharpe)</li>
+                <li>Smart price alerts</li>
+                <li>Favorites & watchlist management</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with wc3:
+        st.markdown("""
+        <div class="welcome-card welcome-card-blue">
+            <p style="font-size:1.5rem;margin:0 0 0.5rem;">🤖</p>
+            <h4>AI Investment Analyst</h4>
+            <p style="color:#87867f;font-size:0.82rem;line-height:1.6;margin:0;">
+                Powered by <b style="color:#141413;">DeepSeek-V4</b>. After running analysis,
+                generate a professional investment memo — sector overview, key findings,
+                risk-adjusted rankings — then ask follow-up questions on pipeline, valuation,
+                and macro catalysts. Export to PDF.
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.info("""
-        **Getting Started**
-        
-        1. Open the sidebar on the left
-        2. Enter custom tickers OR select from preset list (or both!)
-        3. Choose your analysis time period
-        4. Click "Start Analysis" button
-        5. View comprehensive market insights
-        """)
-        
-        st.success("""
-        **Key Features**
-        
-        - Combine custom search with preset stocks
-        - Global stock search with real-time validation
-        - Technical indicators (RSI, MACD, Bollinger Bands)
-        - Smart price alerts and notifications
-        - Risk-return analysis (Beta, Volatility, Sharpe)
-        - AI-powered investment reports
-        - Professional PDF export
-        - Favorites management
-        """)
-        
-        st.markdown("""
-        <div style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; 
-                    background: #faf9f5; border-radius: 10px; 
-                    box-shadow: 0px 0px 0px 1px #f0eee6;
-                    font-family: Inter, system-ui, sans-serif;">
-            <p style="color: #87867f; font-size: 0.85rem; margin: 0;">
-                Disclaimer: For educational purposes only. Not investment advice.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="disclaimer">
+        For educational and research purposes only — not investment advice.
+        Consult a qualified financial advisor before making investment decisions.
+    </div>
+    """, unsafe_allow_html=True)
 
 # ========== AI 对话功能（只在分析完成后显示）==========
 # 只有在分析完成后才显示对话界面
