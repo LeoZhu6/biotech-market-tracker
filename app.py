@@ -937,17 +937,10 @@ Be professional, objective, and insightful."""
 
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
-
-    # ── 处理 pending question（快捷按钮点击后存入 session_state，下一轮 rerun 时执行）
-    if st.session_state.get('_pending_question'):
-        question = st.session_state.pop('_pending_question')
-        with st.spinner("🤖 AI is thinking..."):
-            handle_user_question(question, selected_tickers, client)
-        st.rerun()
-
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-    # ── 快捷按钮（只在没有对话历史时展示，或始终展示均可；此处始终展示）
+    # ── 快捷按钮：点击后存入 session_state 并 rerun，
+    #    真正的 AI 调用在本次 rerun 最顶部（UI 渲染前）完成，避免双重渲染
     st.markdown("**🚀 Quick Questions:**")
     quick_questions = {
         "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
@@ -965,7 +958,7 @@ def add_chat_interface(selected_tickers, client):
     # ── 对话历史
     display_chat_history()
 
-    # ── 输入框（用普通 text_input + 按钮，避免 chat_input 产生浮动白框）
+    # ── 输入框（普通 text_input + 按钮，无浮动白框）
     st.markdown("---")
     col_inp, col_send = st.columns([5, 1])
     with col_inp:
@@ -973,14 +966,14 @@ def add_chat_interface(selected_tickers, client):
             "question",
             placeholder="e.g., Which company has the strongest pipeline?",
             label_visibility="collapsed",
-            key="chat_text_input"
+            key=f"chat_text_input_{st.session_state.get('_chat_ver', 0)}"
         )
     with col_send:
         send_btn = st.button("Send", type="primary", use_container_width=True, key="chat_send")
 
     if send_btn and user_input:
-        with st.spinner("🤖 AI is thinking..."):
-            handle_user_question(user_input, selected_tickers, client)
+        st.session_state['_pending_question'] = user_input
+        st.session_state['_chat_ver'] = st.session_state.get('_chat_ver', 0) + 1
         st.rerun()
 
     # ── 清空历史
@@ -1591,6 +1584,14 @@ def color_return(val):
         return ''
 
 # ==================== 主界面 ====================
+
+# ── 在任何 UI 渲染之前处理 pending question（避免 spinner + rerun 产生双重渲染）
+if st.session_state.get('_pending_question') and st.session_state.get('analyzed_tickers'):
+    _pq = st.session_state.pop('_pending_question')
+    _pq_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
+    with st.spinner("🤖 AI is thinking..."):
+        handle_user_question(_pq, st.session_state['analyzed_tickers'], _pq_client)
+# ──────────────────────────────────────────────
 
 # ---- 品牌 Header ----
 now = datetime.now()
