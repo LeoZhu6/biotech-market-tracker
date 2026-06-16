@@ -106,9 +106,7 @@ st.markdown("""
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
-    /* Hide only the deploy/share buttons inside the toolbar, not the toolbar itself */
-    [data-testid="stToolbarActionButtonIcon"] {display: none !important;}
-    [data-testid="stToolbar"] [data-testid="baseButton-header"] {display: none !important;}
+    /* Keep Streamlit toolbar icons visible for GitHub/share controls. */
 
     /* ---- Page background ---- */
     [data-testid="stAppViewContainer"],
