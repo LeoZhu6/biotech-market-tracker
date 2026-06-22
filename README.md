@@ -6,14 +6,14 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-A comprehensive biotech equity analysis platform that combines real-time market data, technical analysis, and AI-powered investment insights. Built for investors, analysts, and researchers in the biotechnology sector.
+A biotech equity analysis platform combining real-time market data, technical analysis, and AI-powered investment insights — built for investors, analysts, and researchers in the biotechnology sector.
+
+**[🚀 Live Demo →](https://runze-bio-market-tracker.streamlit.app/)**
 
 ---
 
-## 🖥️ UI Preview
+## 🖥️ Preview
 
-### Dashboard Overview
-<!-- ⚠️ Put your main screenshot in an 'assets' folder and name it dashboard.png -->
 <div align="center">
   <img src="assets/dashboard.png" alt="BioMarket Tracker Dashboard" width="100%">
 </div>
@@ -27,7 +27,6 @@ A comprehensive biotech equity analysis platform that combines real-time market 
       <td align="center"><b>AI Investment Report</b></td>
     </tr>
     <tr>
-      <!-- ⚠️ Name these charts.png and report.png -->
       <td width="50%"><img src="assets/charts.png" alt="Technical Charts" width="100%"></td>
       <td width="50%"><img src="assets/report.png" alt="AI Analysis" width="100%"></td>
     </tr>
@@ -36,577 +35,91 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 
 ---
 
-## 🌟 Key Features
+## 🌟 Features
 
-### 📊 **Market Data & Analytics**
-- **Real-time Price Tracking**: Live price updates for biotech stocks and ETFs
-- **Performance Visualization**: Normalized price charts with benchmark comparison (SPY)
-- **Risk-Return Analysis**: Beta, Volatility, Sharpe Ratio calculations
-- **Correlation Heatmap**: Identify market relationships
-
-### 📈 **Technical Analysis**
-- **RSI (Relative Strength Index)**: Identify overbought/oversold conditions
-- **MACD (Moving Average Convergence Divergence)**: Trend momentum signals
-- **Bollinger Bands**: Volatility and price range analysis
-- **Interactive Charts**: Powered by Plotly for deep-dive exploration
-
-### 🤖 **AI-Powered Insights**
-- **DeepSeek-V4 Integration**: Professional investment memo generation (`deepseek-v4-pro`)
-- **Interactive AI Chat**: Ask follow-up questions about your selected stocks in a conversational sidebar
-- **Sector Analysis**: Market sentiment and trend identification
-- **Actionable Recommendations**: Growth opportunities and risk management
-- **Streaming Response**: Real-time AI analysis generation
-
-### 🔍 **Smart Stock Search & News**
-- **Intelligent Ticker Search**: Fuzzy search by company name or symbol via Yahoo Finance
-- **A-Share / Chinese Stock Support**: Pinyin and Chinese-name lookup (`pypinyin` + `deep-translator`)
-- **Company News Feed**: Latest headlines pulled per company alongside the analysis
-
-### 🔔 **Smart Alerts & Management**
-- **Price Alerts**: Get notified when stocks hit target prices
-- **Favorites List**: Save and quickly load your watchlists
-- **Auto-Refresh**: Optional 30-second data updates
-- **Custom + Preset Stocks**: Combine your own picks with curated lists
-
-### 📄 **Export & Reporting**
-- **PDF Reports**: Professional-grade investment memos
-- **CSV Export**: Raw data for further analysis
-- **Timestamped Reports**: Track your analysis history
-
----
-
-## 🚀 Live Demo
-
-**[Try BioMarket Tracker Now →](https://runze-bio-market-tracker.streamlit.app/)**
+- **📊 Market Data** — Real-time prices, normalized performance vs. SPY, beta / volatility / Sharpe, correlation heatmap
+- **📈 Technical Analysis** — RSI, MACD, Bollinger Bands with interactive Plotly charts
+- **🤖 AI Insights** — DeepSeek-V4 (`deepseek-v4-pro`) investment memos + an interactive chat to ask follow-up questions
+- **🔍 Smart Search** — Fuzzy ticker search incl. A-share / Chinese-name lookup (pinyin + translation), plus per-company news feed
+- **🔔 Alerts & Watchlists** — Price alerts, favorites, optional auto-refresh, custom + preset stock lists
+- **📄 Export** — PDF investment memos and CSV data export
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| **Frontend** | Streamlit (Anthropic-inspired warm theme) |
-| **Data Source** | Yahoo Finance API (yfinance) |
-| **Visualization** | Plotly, Matplotlib/Seaborn, Custom CSS |
-| **AI Model** | DeepSeek-V4 API (`deepseek-v4-pro`) |
-| **Search & i18n** | googlesearch-python, pypinyin, deep-translator |
-| **PDF Generation** | ReportLab |
-| **Data Processing** | Pandas, NumPy |
-| **Config** | python-dotenv (`.env`) |
+| Layer | Technology |
+|-------|------------|
+| Frontend | Streamlit (Anthropic-inspired warm theme) |
+| Data | Yahoo Finance (yfinance) |
+| Visualization | Plotly, Matplotlib/Seaborn |
+| AI | DeepSeek-V4 API (via `openai` SDK) |
+| Search / i18n | googlesearch-python, pypinyin, deep-translator |
+| Reporting | ReportLab, Pandas, NumPy |
 
 ---
 
-## 📦 Installation
-
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
-- DeepSeek API key ([Get one here](https://platform.deepseek.com))
-
-### Quick Start
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/LeoZhu6/biotech-market-tracker.git
-   cd biotech-market-tracker
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure API Key**
-
-   The app reads the key from a `.env` file via `python-dotenv`. Create a `.env` in the project root:
-   ```bash
-   echo 'DEEPSEEK_API_KEY=sk-your-key-here' > .env
-   ```
-   Or export it as an environment variable:
-   ```bash
-   export DEEPSEEK_API_KEY="sk-your-key-here"
-   ```
-
-4. **Run the application**
-   ```bash
-   streamlit run app.py
-   ```
-
-5. **Open in browser**
-   ```
-   http://localhost:8501
-   ```
-
----
-
-## 📋 Requirements
-
-```txt
-streamlit
-yfinance
-pandas
-numpy
-matplotlib
-seaborn
-plotly
-requests
-pypinyin
-deep-translator
-python-dotenv
-openai
-reportlab
-googlesearch-python
-```
-
-> The `openai` SDK is used as a drop-in client for the DeepSeek API (`base_url=https://api.deepseek.com`).
-
----
-
-## 🎯 Usage Guide
-
-### 1️⃣ **Stock Selection**
-
-**Option A: Custom Search**
-- Enter ticker symbols in the sidebar (e.g., `BNTX, CRSP, BEAM`)
-- System validates tickers in real-time
-- Supports global stock markets
-
-**Option B: Preset List**
-- Choose from curated biotech stocks
-- Includes major ETFs (XBI, IBB)
-- Popular pharma companies (MRNA, PFE, VRTX)
-
-**Option C: Combine Both**
-- Mix custom and preset selections
-- Save combinations to Favorites
-
-### 2️⃣ **Time Period Selection**
-- 3 months
-- 6 months
-- 1 year (default)
-- 3 years
-- 5 years
-
-### 3️⃣ **Analysis Workflow**
-
-```mermaid
-graph LR
-    A[Select Stocks] --> B[Choose Period]
-    B --> C[Start Analysis]
-    C --> D[View Charts]
-    D --> E[Technical Indicators]
-    E --> F[Generate AI Report]
-    F --> G[Export PDF/CSV]
-```
-
-### 4️⃣ **Price Alerts**
-1. Go to **Alerts** tab in sidebar
-2. Select a stock
-3. Set target price
-4. Choose alert type (Above/Below)
-5. Get notified when triggered
-
-### 5️⃣ **AI Report Generation**
-1. Complete stock analysis
-2. Click **"Generate Report"** button
-3. Watch AI draft in real-time
-4. Export as PDF for sharing
-
----
-
-## 🧪 Technical Indicators Explained
-
-### RSI (Relative Strength Index)
-- **Range**: 0-100
-- **Overbought**: > 70 (potential sell signal)
-- **Oversold**: < 30 (potential buy signal)
-- **Neutral**: 30-70
-
-### MACD (Moving Average Convergence Divergence)
-- **Bullish Signal**: MACD crosses above signal line
-- **Bearish Signal**: MACD crosses below signal line
-- **Histogram**: Shows momentum strength
-
-### Bollinger Bands
-- **Upper Band**: Price resistance level
-- **Lower Band**: Price support level
-- **Squeeze**: Low volatility (potential breakout)
-- **Expansion**: High volatility (trending market)
-
-### Beta
-- **β > 1**: More volatile than market
-- **β = 1**: Moves with market
-- **β < 1**: Less volatile than market
-- **β < 0**: Inverse correlation (rare)
-
----
-
-## 🤖 AI Analysis Features
-
-### What DeepSeek-V4 Analyzes:
-
-1. **Sector Overview**
-   - Current biotech market sentiment
-   - Risk-On vs Risk-Off environment
-   - Performance vs broader market (SPY benchmark)
-
-2. **Key Findings**
-   - Top performers (best risk-adjusted returns)
-   - Underperformers (high risk, low return)
-   - Beta analysis (market correlation insights)
-
-3. **Investment Strategy**
-   - Growth opportunities (actionable long ideas)
-   - Risk management (defensive positioning)
-   - Portfolio allocation suggestions
-
-### Sample AI Output:
-
-```markdown
-### Sector Overview
-The biotech sector is showing Risk-On sentiment with XBI 
-outperforming SPY by +8.3% over the past year...
-
-### Key Findings
-- VRTX demonstrates best risk-adjusted returns (Sharpe: 1.8)
-- MRNA exhibits high volatility (45%) with negative returns
-- Sector beta averaging 1.2x suggests amplified market moves
-
-### Investment Strategy
-Growth: Accumulate REGN on pullbacks below $850
-Defense: Reduce GILD exposure, rotate to IBB for diversification
-```
-
----
-
-## 📊 Supported Stocks
-
-### Preset Biotech Stocks
-
-| Ticker | Company | Category |
-|--------|---------|----------|
-| **XBI** | SPDR S&P Biotech ETF | ETF |
-| **IBB** | iShares Biotech ETF | ETF |
-| **MRNA** | Moderna | mRNA Therapeutics |
-| **PFE** | Pfizer | Big Pharma |
-| **VRTX** | Vertex Pharmaceuticals | Rare Disease |
-| **REGN** | Regeneron | Biologics |
-| **AMGN** | Amgen | Biopharmaceuticals |
-| **GILD** | Gilead Sciences | Antivirals |
-| **LLY** | Eli Lilly | Diabetes/Oncology |
-| **NVO** | Novo Nordisk | Diabetes |
-| **SPY** | S&P 500 ETF | Benchmark |
-
-### Custom Search
-- Supports **any valid ticker** from Yahoo Finance
-- Global markets (US, EU, Asia)
-- Real-time validation
-- Automatic name lookup
-
----
-
-## 🔑 API Configuration
-
-### DeepSeek API Setup
-
-1. **Get API Key**
-   - Visit [DeepSeek Platform](https://platform.deepseek.com)
-   - Sign up for an account
-   - Generate API key
-
-2. **Configure Locally (`.env`)**
-
-   The app loads the key automatically with `python-dotenv`:
-   ```python
-   # app.py
-   DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-   ```
-   Just create a `.env` file in the project root:
-   ```bash
-   DEEPSEEK_API_KEY=sk-your-key-here
-   ```
-
-3. **For Streamlit Cloud Deployment**
-   - Go to App Settings → Secrets
-   - Add:
-     ```toml
-     DEEPSEEK_API_KEY = "sk-your-key-here"
-     ```
-   - Streamlit Cloud exposes secrets as environment variables, so `os.getenv("DEEPSEEK_API_KEY")` continues to work without code changes.
-
----
-
-## 🚀 Deployment
-
-### Streamlit Cloud (Recommended)
-
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy on Streamlit Cloud**
-   - Go to [share.streamlit.io](https://share.streamlit.io)
-   - Connect your GitHub repository
-   - Select `app.py` as main file
-   - Add API key in Secrets
-   - Click Deploy
-
-3. **Custom Domain (Optional)**
-   - Configure in Streamlit Cloud settings
-   - Add CNAME record in your DNS
-
-### Docker Deployment
-
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-EXPOSE 8501
-
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
-```
+## 🚀 Quick Start
 
 ```bash
-docker build -t biomarket-tracker .
-docker run -p 8501:8501 -e DEEPSEEK_API_KEY=your-key biomarket-tracker
-```
+# 1. Clone
+git clone https://github.com/LeoZhu6/biotech-market-tracker.git
+cd biotech-market-tracker
 
----
-
-## 🎨 Customization
-
-### Add New Preset Stocks
-
-```python
-TICKER_MAP = {
-    'XBI': 'XBI (标普生物科技ETF)',
-    'YOUR_TICKER': 'YOUR_TICKER (Company Name)',  # Add here
-    # ...
-}
-```
-
-### Modify Technical Indicators
-
-```python
-# RSI Period
-rsi = calculate_rsi(ticker_prices, period=14)  # Change period
-
-# MACD Parameters
-macd, signal, histogram = calculate_macd(
-    ticker_prices, 
-    fast=12,  # Fast EMA
-    slow=26,  # Slow EMA
-    signal=9  # Signal line
-)
-
-# Bollinger Bands
-sma, upper_bb, lower_bb = calculate_bollinger_bands(
-    ticker_prices, 
-    period=20,   # SMA period
-    std_dev=2    # Standard deviations
-)
-```
-
-### Change Color Scheme
-
-The app uses an Anthropic-inspired warm palette defined in `.streamlit/config.toml`:
-
-```toml
-[theme]
-primaryColor = "#C85D30"            # Terracotta accent
-backgroundColor = "#FAF8F4"         # Warm paper
-secondaryBackgroundColor = "#FFFDF8"
-textColor = "#1A1512"
-font = "sans serif"
-```
-
-Adjust these values (and the inline CSS in `app.py`) to retheme the interface.
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**1. "ModuleNotFoundError: No module named 'yfinance'"**
-```bash
+# 2. Install
 pip install -r requirements.txt
+
+# 3. Configure API key (.env in project root)
+echo 'DEEPSEEK_API_KEY=sk-your-key-here' > .env
+
+# 4. Run
+streamlit run app.py        # opens http://localhost:8501
 ```
 
-**2. "Invalid API Key"**
-- Check your DeepSeek API key
-- Ensure no extra spaces
-- Verify key is active
+Get a DeepSeek API key at [platform.deepseek.com](https://platform.deepseek.com). On **Streamlit Cloud**, add the key under *App Settings → Secrets* — `os.getenv("DEEPSEEK_API_KEY")` picks it up automatically.
 
-**3. "No data found for ticker"**
-- Verify ticker symbol is correct
-- Check if market is open
-- Try a different ticker
+---
 
-**4. "Matplotlib not found" (if using old version)**
-- Update to latest code (doesn't require matplotlib)
-- Or install: `pip install matplotlib`
+## 🎯 Usage
 
-**5. Slow performance**
-- Reduce number of selected stocks
-- Use shorter time periods
-- Disable auto-refresh
+1. **Select stocks** — type tickers / company names in the sidebar, or pick from the preset biotech list (XBI, IBB, MRNA, VRTX, REGN, …). Custom and preset selections can be combined and saved to Favorites.
+2. **Choose a period** — 3M / 6M / 1Y / 3Y / 5Y.
+3. **Analyze** — view performance charts, risk metrics, and technical indicators.
+4. **Generate AI report** — stream a DeepSeek-V4 memo, then ask follow-ups in the chat or export to PDF.
+5. **Set alerts** — pick a stock, set a target price, choose Above/Below.
+
+Custom search supports any valid Yahoo Finance ticker (US / EU / Asia, including A-shares).
 
 ---
 
 ## 📈 Roadmap
 
-### Shipped
-
-- [x] **Chinese / A-Share Search** (pinyin + name lookup)
-- [x] **Company News Feed** (headlines per company)
-- [x] **Interactive AI Chat** (conversational follow-ups)
-- [x] **Warm UI Redesign** (Anthropic-inspired theme)
-
-### Planned Features
-
-- [ ] **News Sentiment Analysis** (NLP scoring on biotech headlines)
-- [ ] **Portfolio Backtesting** (Historical performance simulation)
-- [ ] **Options Analytics** (Greeks, IV surface)
-- [ ] **Peer Comparison** (Automatic competitor analysis)
-- [ ] **Email Alerts** (Send notifications via email)
-- [ ] **Mobile App** (React Native version)
-- [ ] **API Endpoints** (RESTful API for integration)
-
-### Version History
-
-- **v1.1.0** (2026-06) - Major update
-  - Interactive AI chat (DeepSeek-V4, `deepseek-v4-pro`)
-  - Smart ticker search with Chinese / A-share support
-  - Company news feed integration
-  - Anthropic-inspired warm UI redesign
-- **v1.0.0** (2026-02) - Initial release
-  - Real-time data tracking
-  - Technical indicators
-  - AI report generation
-  - PDF export
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit your changes**
-   ```bash
-   git commit -m "Add amazing feature"
-   ```
-4. **Push to branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. **Open a Pull Request**
-
-### Contribution Guidelines
-- Follow PEP 8 style guide
-- Add docstrings to functions
-- Update README if needed
-- Test thoroughly before submitting
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2026 Runze Zhu
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
-```
+- [x] Chinese / A-share search, company news feed, interactive AI chat, warm UI redesign
+- [ ] News sentiment analysis (NLP) · portfolio backtesting · peer comparison · email alerts
 
 ---
 
 ## 👨‍💻 Author
 
-**Runze Zhu (朱润则)**
-- 🎓 Business School, HKUST
-- 💼 Medical Finance Advisor Intern @ Haoyue Capital
-- 🔬 Interests: Finance + Bioengineering
-- 📧 Email: [rzhuar@connect.ust.hk](mailto:rzhuar@connect.ust.hk)
-- 💼 LinkedIn: [https://www.linkedin.com/in/runze-zhu-8143b4380/](https://linkedin.com/in/runze-zhu-8143b4380/)
-- 🐙 GitHub: [@LeoZhu6](https://github.com/LeoZhu6)
-
----
-
-## 🙏 Acknowledgments
-
-- **DeepSeek** - AI model provider
-- **Yahoo Finance** - Market data source
-- **Streamlit** - Web framework
-- **Plotly** - Interactive charts
-- **HKUST** - Academic support
+**Runze Zhu (朱润则)** — Business School, HKUST · Finance + Bioengineering
+📧 [rzhuar@connect.ust.hk](mailto:rzhuar@connect.ust.hk) · 💼 [LinkedIn](https://www.linkedin.com/in/runze-zhu-8143b4380/) · 🐙 [@LeoZhu6](https://github.com/LeoZhu6)
 
 ---
 
 ## ⚠️ Disclaimer
 
-**Important Notice:**
-
-This software is provided for **educational and informational purposes only**. It is **NOT** intended as:
-
-- Investment advice
-- Financial consulting
-- Trading recommendations
-- Professional guidance
-
-**Key Points:**
-
-1. ✅ **Use at Your Own Risk**: All investment decisions are your responsibility
-2. ✅ **No Guarantees**: Past performance does not indicate future results
-3. ✅ **Consult Professionals**: Seek advice from licensed financial advisors
-4. ✅ **AI Limitations**: AI-generated reports may contain errors or biases
-5. ✅ **Data Accuracy**: Market data may have delays or inaccuracies
-
-The author and contributors assume **no liability** for any financial losses incurred through the use of this software.
+For **educational and informational purposes only** — not investment advice. AI-generated reports and market data may contain errors or delays. All investment decisions are your own responsibility; consult a licensed financial advisor. Past performance does not indicate future results.
 
 ---
 
-## 📞 Support
+## 📄 License
 
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/LeoZhu6/biotech-market-tracker/issues)
-- 📧 **Email**: rzhuar@connect.ust.hk
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/LeoZhu6/biotech-market-tracker/discussions)
-
----
-
-## :star: Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=LeoZhu6/biotech-market-tracker&type=date&legend=top-left)](https://www.star-history.com/#LeoZhu6/biotech-market-tracker&type=date&legend=top-left)
-
----
+Licensed under the **MIT License** — see [LICENSE](LICENSE). Copyright © 2026 Runze Zhu.
 
 <div align="center">
 
-### Made with ❤️ by Runze Zhu
-
 **If you find this project helpful, please consider giving it a ⭐!**
 
-[Report Bug](https://github.com/LeoZhu6/biotech-market-tracker/issues) · 
-[Request Feature](https://github.com/LeoZhu6/biotech-market-tracker/issues) · 
-[Documentation](https://github.com/LeoZhu6/biotech-market-tracker/wiki)
+[Report Bug](https://github.com/LeoZhu6/biotech-market-tracker/issues) · [Request Feature](https://github.com/LeoZhu6/biotech-market-tracker/issues)
 
 </div>
