@@ -51,10 +51,16 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 - **Interactive Charts**: Powered by Plotly for deep-dive exploration
 
 ### 🤖 **AI-Powered Insights**
-- **DeepSeek-V4 Integration**: Professional investment memo generation
+- **DeepSeek-V4 Integration**: Professional investment memo generation (`deepseek-v4-pro`)
+- **Interactive AI Chat**: Ask follow-up questions about your selected stocks in a conversational sidebar
 - **Sector Analysis**: Market sentiment and trend identification
 - **Actionable Recommendations**: Growth opportunities and risk management
 - **Streaming Response**: Real-time AI analysis generation
+
+### 🔍 **Smart Stock Search & News**
+- **Intelligent Ticker Search**: Fuzzy search by company name or symbol via Yahoo Finance
+- **A-Share / Chinese Stock Support**: Pinyin and Chinese-name lookup (`pypinyin` + `deep-translator`)
+- **Company News Feed**: Latest headlines pulled per company alongside the analysis
 
 ### 🔔 **Smart Alerts & Management**
 - **Price Alerts**: Get notified when stocks hit target prices
@@ -79,12 +85,14 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 
 | Component | Technology |
 |-----------|------------|
-| **Frontend** | Streamlit |
+| **Frontend** | Streamlit (Anthropic-inspired warm theme) |
 | **Data Source** | Yahoo Finance API (yfinance) |
-| **Visualization** | Plotly, Custom CSS |
-| **AI Model** | DeepSeek-V4 API |
+| **Visualization** | Plotly, Matplotlib/Seaborn, Custom CSS |
+| **AI Model** | DeepSeek-V4 API (`deepseek-v4-pro`) |
+| **Search & i18n** | googlesearch-python, pypinyin, deep-translator |
 | **PDF Generation** | ReportLab |
 | **Data Processing** | Pandas, NumPy |
+| **Config** | python-dotenv (`.env`) |
 
 ---
 
@@ -99,8 +107,8 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/biomarket-tracker.git
-   cd biomarket-tracker
+   git clone https://github.com/LeoZhu6/biotech-market-tracker.git
+   cd biotech-market-tracker
    ```
 
 2. **Install dependencies**
@@ -109,15 +117,14 @@ A comprehensive biotech equity analysis platform that combines real-time market 
    ```
 
 3. **Configure API Key**
-   
-   Open `app.py` and replace the API key:
-   ```python
-   DEEPSEEK_API_KEY = "your-api-key-here"
-   ```
-   
-   Or use environment variable:
+
+   The app reads the key from a `.env` file via `python-dotenv`. Create a `.env` in the project root:
    ```bash
-   export DEEPSEEK_API_KEY="your-api-key-here"
+   echo 'DEEPSEEK_API_KEY=sk-your-key-here' > .env
+   ```
+   Or export it as an environment variable:
+   ```bash
+   export DEEPSEEK_API_KEY="sk-your-key-here"
    ```
 
 4. **Run the application**
@@ -135,14 +142,23 @@ A comprehensive biotech equity analysis platform that combines real-time market 
 ## 📋 Requirements
 
 ```txt
-streamlit>=1.28.0
-yfinance>=0.2.28
-pandas>=2.0.0
-plotly>=5.17.0
-openai>=1.3.0
-reportlab>=4.0.0
-numpy>=1.24.0
+streamlit
+yfinance
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+requests
+pypinyin
+deep-translator
+python-dotenv
+openai
+reportlab
+googlesearch-python
 ```
+
+> The `openai` SDK is used as a drop-in client for the DeepSeek API (`base_url=https://api.deepseek.com`).
 
 ---
 
@@ -298,14 +314,16 @@ Defense: Reduce GILD exposure, rotate to IBB for diversification
    - Sign up for an account
    - Generate API key
 
-2. **Configure in Code**
+2. **Configure Locally (`.env`)**
+
+   The app loads the key automatically with `python-dotenv`:
    ```python
-   # Method 1: Direct in app.py
-   DEEPSEEK_API_KEY = "sk-your-key-here"
-   
-   # Method 2: Environment variable (recommended)
-   import os
+   # app.py
    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+   ```
+   Just create a `.env` file in the project root:
+   ```bash
+   DEEPSEEK_API_KEY=sk-your-key-here
    ```
 
 3. **For Streamlit Cloud Deployment**
@@ -314,10 +332,7 @@ Defense: Reduce GILD exposure, rotate to IBB for diversification
      ```toml
      DEEPSEEK_API_KEY = "sk-your-key-here"
      ```
-   - Update code:
-     ```python
-     DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
-     ```
+   - Streamlit Cloud exposes secrets as environment variables, so `os.getenv("DEEPSEEK_API_KEY")` continues to work without code changes.
 
 ---
 
@@ -403,14 +418,18 @@ sma, upper_bb, lower_bb = calculate_bollinger_bands(
 
 ### Change Color Scheme
 
-```python
-# In CSS section
-:root {
-    --primary-color: #1e88e5;    # Blue
-    --secondary-color: #43a047;  # Green
-    --accent-color: #ff6f00;     # Orange
-}
+The app uses an Anthropic-inspired warm palette defined in `.streamlit/config.toml`:
+
+```toml
+[theme]
+primaryColor = "#C85D30"            # Terracotta accent
+backgroundColor = "#FAF8F4"         # Warm paper
+secondaryBackgroundColor = "#FFFDF8"
+textColor = "#1A1512"
+font = "sans serif"
 ```
+
+Adjust these values (and the inline CSS in `app.py`) to retheme the interface.
 
 ---
 
@@ -446,11 +465,17 @@ pip install -r requirements.txt
 
 ## 📈 Roadmap
 
+### Shipped
+
+- [x] **Chinese / A-Share Search** (pinyin + name lookup)
+- [x] **Company News Feed** (headlines per company)
+- [x] **Interactive AI Chat** (conversational follow-ups)
+- [x] **Warm UI Redesign** (Anthropic-inspired theme)
+
 ### Planned Features
 
-- [ ] **Multi-language Support** (中文界面)
+- [ ] **News Sentiment Analysis** (NLP scoring on biotech headlines)
 - [ ] **Portfolio Backtesting** (Historical performance simulation)
-- [ ] **News Sentiment Analysis** (NLP on biotech news)
 - [ ] **Options Analytics** (Greeks, IV surface)
 - [ ] **Peer Comparison** (Automatic competitor analysis)
 - [ ] **Email Alerts** (Send notifications via email)
@@ -459,6 +484,11 @@ pip install -r requirements.txt
 
 ### Version History
 
+- **v1.1.0** (2026-06) - Major update
+  - Interactive AI chat (DeepSeek-V4, `deepseek-v4-pro`)
+  - Smart ticker search with Chinese / A-share support
+  - Company news feed integration
+  - Anthropic-inspired warm UI redesign
 - **v1.0.0** (2026-02) - Initial release
   - Real-time data tracking
   - Technical indicators
@@ -565,7 +595,7 @@ The author and contributors assume **no liability** for any financial losses inc
 
 ## :star: Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LeoZhu6/biomarket-tracker&type=date&legend=top-left)](https://www.star-history.com/#LeoZhu6/biomarket-tracker&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=LeoZhu6/biotech-market-tracker&type=date&legend=top-left)](https://www.star-history.com/#LeoZhu6/biotech-market-tracker&type=date&legend=top-left)
 
 ---
 
@@ -575,8 +605,8 @@ The author and contributors assume **no liability** for any financial losses inc
 
 **If you find this project helpful, please consider giving it a ⭐!**
 
-[Report Bug](https://github.com/LeoZhu6/biomarket-tracker/issues) · 
-[Request Feature](https://github.com/LeoZhu6/biomarket-tracker/issues) · 
-[Documentation](https://github.com/LeoZhu6/biomarket-tracker/wiki)
+[Report Bug](https://github.com/LeoZhu6/biotech-market-tracker/issues) · 
+[Request Feature](https://github.com/LeoZhu6/biotech-market-tracker/issues) · 
+[Documentation](https://github.com/LeoZhu6/biotech-market-tracker/wiki)
 
 </div>
