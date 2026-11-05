@@ -185,6 +185,17 @@ class Workflows(unittest.TestCase):
         self.a.button(key="quick_q_1").click().run(timeout=30)
         self.assertEqual(self.completions.create.call_args.kwargs.get("extra_body"), {"thinking": {"type": "disabled"}})
 
+    def test_chat_has_no_avatars_or_emoji_in_displayed_answers(self):
+        self.report()
+        self.completions.create.side_effect = lambda **kw: NS(choices=[NS(message=NS(content="# Outlook\n\n\U0001f916 Research notes \u2705\n\n- Pipeline review"))])
+        self.a.button(key="quick_q_0").click().run(timeout=30)
+        self.healthy()
+        self.assertEqual(len(self.a.get("chat_message")), 0)
+        rendered = "\n".join(m.value for m in self.a.markdown)
+        self.assertNotIn("\U0001f916", rendered)
+        self.assertNotIn("\u2705", rendered)
+        self.assertIn("Research notes", rendered)
+
     def test_pdf_download_survives_rerun_and_csv_exists(self):
         self.report()
         self.click("Generate PDF")

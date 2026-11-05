@@ -855,14 +855,21 @@ def get_ai_response(messages, client):
     except Exception as e:
         return f" 获取回答时出错: {str(e)}"
 
-def display_chat_history():
-    """Render answers as Markdown instead of interpolating model text into HTML."""
+def chat_display_text(content):
+    """Keep model-supplied emoji out of the interface, including saved answers."""
+    return re.sub(r'[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D\u20E3]', '', content or '').strip()
+
+
+def display_chat_history(render_key="chat_history"):
+    """Render compact research notes without avatars or decorative icons."""
     if st.session_state.chat_history:
-        st.markdown("### Chat History")
-        for msg in st.session_state.chat_history:
-            role = "user" if msg['role'] == 'user' else "assistant"
-            with st.chat_message(role, avatar=":material/person:" if role == "user" else ":material/smart_toy:"):
-                st.markdown(msg.get('content') or "No answer received. Please try again.")
+        with st.container(key=render_key):
+            st.markdown('<p class="chat-history-title">Chat history</p>', unsafe_allow_html=True)
+            for index, msg in enumerate(st.session_state.chat_history):
+                role = "user" if msg['role'] == 'user' else "assistant"
+                with st.container(key=f"{render_key}_message_{role}_{index}"):
+                    st.caption("You" if role == "user" else "Analyst")
+                    st.markdown(chat_display_text(msg.get('content')) or "No answer received. Please try again.")
 
 
 def handle_user_question(question, selected_tickers, client):
@@ -969,7 +976,7 @@ def add_chat_interface(selected_tickers, client):
                 handle_user_question(question, selected_tickers, client)
             history_slot.empty()
             with history_slot.container():
-                display_chat_history()
+                display_chat_history("chat_history_updated")
 
 # ==========================================
 TIME_RANGE_MAP = {

@@ -36,6 +36,52 @@
 /* Streamlit retains previous deltas while a fragment is running. Suppress only
    those obsolete chat nodes, leaving the current controls and progress visible. */
 .st-key-ai_chat [data-stale="true"] { display: none !important; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) {
+    max-width: 78ch;
+    width: 100%;
+    margin: 1rem auto;
+}
+:is(.st-key-chat_history, .st-key-chat_history_updated) .chat-history-title {
+    font-size: 1.15rem !important;
+    font-weight: 600;
+    margin: 0 0 0.75rem !important;
+    color: var(--text) !important;
+}
+:is(.st-key-chat_history, .st-key-chat_history_updated) [class*="_message_"] {
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    gap: 0.3rem;
+}
+:is(.st-key-chat_history, .st-key-chat_history_updated) [class*="_message_user_"] { background: var(--surface-2); }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] :is(h1,h2,h3,h4,h5,h6) {
+    font-family: var(--sans) !important;
+    font-weight: 600 !important;
+    letter-spacing: normal !important;
+    line-height: 1.4 !important;
+    padding: 0 !important;
+    margin: 1.15rem 0 0.5rem !important;
+    color: var(--text) !important;
+}
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] h1 { font-size: 1.35rem !important; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] h2 { font-size: 1.15rem !important; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] :is(h3,h4,h5,h6) { font-size: 1rem !important; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] > :first-child { margin-top: 0 !important; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] :is(p,li) {
+    font-size: 0.95rem !important;
+    line-height: 1.75 !important;
+}
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] p { margin: 0 0 0.7rem !important; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] :is(ul,ol) { margin: 0.4rem 0 0.8rem; padding-left: 1.3rem; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stMarkdownContainer"] li { margin-bottom: 0.25rem; }
+:is(.st-key-chat_history, .st-key-chat_history_updated) [data-testid="stCaptionContainer"] p {
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    color: var(--text-3) !important;
+    margin: 0 0 0.4rem !important;
+}
 .ticker-list {
     display: flex;
     flex-wrap: wrap;
