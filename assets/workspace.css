@@ -33,6 +33,9 @@
     font-size: 0.82rem;
 }
 .market-status strong { color: var(--text); font-weight: 600; }
+/* Streamlit retains previous deltas while a fragment is running. Suppress only
+   those obsolete chat nodes, leaving the current controls and progress visible. */
+.st-key-ai_chat [data-stale="true"] { display: none !important; }
 .ticker-list {
     display: flex;
     flex-wrap: wrap;

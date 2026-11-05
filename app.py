@@ -846,33 +846,24 @@ def get_ai_response(messages, client):
             model=DEEPSEEK_MODEL,
             messages=messages,
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=4096,
+            extra_body={"thinking": {"type": "disabled"}},
         )
-        return response.choices[0].message.content
+        answer = response.choices[0].message.content
+        if not answer or not answer.strip():
+            return "The AI returned no answer. Please try again or ask a shorter question."
+        return answer
     except Exception as e:
         return f"❌ 获取回答时出错: {str(e)}"
 
 def display_chat_history():
-    """显示对话历史"""
+    """Render answers as Markdown instead of interpolating model text into HTML."""
     if st.session_state.chat_history:
-        st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
-        st.markdown("### 💬 Chat History")
-        
+        st.markdown("### Chat History")
         for msg in st.session_state.chat_history:
-            if msg['role'] == 'user':
-                st.markdown(f'''
-                <div class="chat-message user">
-                    <div class="chat-header">👤 Your Question</div>
-                    <div>{msg['content']}</div>
-                </div>
-                ''', unsafe_allow_html=True)
-            else:
-                st.markdown(f'''
-                <div class="chat-message assistant">
-                    <div class="chat-header">🤖 AI Response</div>
-                    <div>{msg['content']}</div>
-                </div>
-                ''', unsafe_allow_html=True)
+            role = "user" if msg['role'] == 'user' else "assistant"
+            with st.chat_message(role):
+                st.markdown(msg.get('content') or "No answer received. Please try again.")
 
 
 def handle_user_question(question, selected_tickers, client):
@@ -923,6 +914,7 @@ Be professional, objective, and insightful."""
     })
 
 
+@st.fragment
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
 
@@ -976,6 +968,7 @@ def add_chat_interface(selected_tickers, client):
             question = st.session_state.pop('_thinking_question')
             with st.spinner("AI is thinking..."):
                 handle_user_question(question, selected_tickers, client)
+            history_slot.empty()
             with history_slot.container():
                 display_chat_history()
 
@@ -2474,7 +2467,8 @@ if st.session_state.get('analysis_completed', False):
         
         if analyzed_tickers and len(analyzed_tickers) > 0:
             chat_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL, timeout=60.0, max_retries=1)
-            add_chat_interface(analyzed_tickers, chat_client)
+            with st.container(key="ai_chat"):
+                add_chat_interface(analyzed_tickers, chat_client)
                         
     except Exception as e:
         st.error(f"Chat feature error: {str(e)}")

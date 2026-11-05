@@ -173,6 +173,18 @@ class Workflows(unittest.TestCase):
         self.assertEqual(observed, [True])
         self.assertEqual(len([b for b in self.a.button if b.key and b.key.startswith("quick_q_")]), 4)
 
+    def test_empty_ai_response_is_not_saved_as_blank(self):
+        self.report()
+        self.completions.create.side_effect = lambda **kw: NS(choices=[NS(message=NS(content=""), finish_reason="length")])
+        self.a.button(key="quick_q_1").click().run(timeout=30)
+        self.healthy()
+        self.assertTrue(self.a.session_state.chat_history[-1]["content"].strip())
+
+    def test_followup_explicitly_requests_final_answer_mode(self):
+        self.report()
+        self.a.button(key="quick_q_1").click().run(timeout=30)
+        self.assertEqual(self.completions.create.call_args.kwargs.get("extra_body"), {"thinking": {"type": "disabled"}})
+
     def test_pdf_download_survives_rerun_and_csv_exists(self):
         self.report()
         self.click("Generate PDF")
