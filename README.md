@@ -1,6 +1,6 @@
 # 🧬 BioMarket Tracker
 
-> **Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V4**
+> **Professional Biotech Market Intelligence Platform | Powered by DeepSeek-V4.1-Flash**
 
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -39,7 +39,7 @@ A biotech equity analysis platform combining real-time market data, technical an
 
 - **📊 Market Data** — Real-time prices, normalized performance vs. SPY, beta / volatility / Sharpe, correlation heatmap
 - **📈 Technical Analysis** — RSI, MACD, Bollinger Bands with interactive Plotly charts
-- **🤖 AI Insights** — DeepSeek-V4 (`deepseek-v4-pro`) investment memos + an interactive chat to ask follow-up questions
+- **🤖 AI Insights** — DeepSeek-V4.1-Flash (`deepseek-flash`) investment memos + an interactive chat to ask follow-up questions
 - **🔍 Smart Search** — Fuzzy ticker search incl. A-share / Chinese-name lookup (pinyin + translation), plus per-company news feed
 - **🔔 Alerts & Watchlists** — Price alerts, favorites, optional auto-refresh, custom + preset stock lists
 - **📄 Export** — PDF investment memos and CSV data export
@@ -53,7 +53,7 @@ A biotech equity analysis platform combining real-time market data, technical an
 | Frontend | Streamlit (Anthropic-inspired warm theme) |
 | Data | Yahoo Finance (yfinance) |
 | Visualization | Plotly, Matplotlib/Seaborn |
-| AI | DeepSeek-V4 API (via `openai` SDK) |
+| AI | DeepSeek-V4.1-Flash API (via `openai` SDK) |
 | Search / i18n | googlesearch-python, pypinyin, deep-translator |
 | Reporting | ReportLab, Pandas, NumPy |
 
@@ -85,7 +85,7 @@ Get a DeepSeek API key at [platform.deepseek.com](https://platform.deepseek.com)
 1. **Select stocks** — type tickers / company names in the sidebar, or pick from the preset biotech list (XBI, IBB, MRNA, VRTX, REGN, …). Custom and preset selections can be combined and saved to Favorites.
 2. **Choose a period** — 3M / 6M / 1Y / 3Y / 5Y.
 3. **Analyze** — view performance charts, risk metrics, and technical indicators.
-4. **Generate AI report** — stream a DeepSeek-V4 memo, then ask follow-ups in the chat or export to PDF.
+4. **Generate AI report** — stream a DeepSeek-V4.1-Flash memo, then ask follow-ups in the chat or export to PDF.
 5. **Set alerts** — pick a stock, set a target price, choose Above/Below.
 
 Custom search supports any valid Yahoo Finance ticker (US / EU / Asia, including A-shares).

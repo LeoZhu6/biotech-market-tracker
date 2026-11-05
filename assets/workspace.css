@@ -1,0 +1,93 @@
+/* Research workspace: compact chrome, clear data, comfortable long-form reading. */
+.brand-header {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.4rem 0 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+.brand-copy { min-width: 0; }
+.stMarkdown p.brand-title,
+[data-testid="stMarkdownContainer"] p.brand-title {
+    font-size: clamp(1.8rem, 3vw, 2.5rem) !important;
+    text-align: left !important;
+}
+.brand-sub { text-align: left !important; margin-top: 0.45rem !important; }
+.brand-badge {
+    color: var(--text-2);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    flex-shrink: 0;
+}
+.market-status {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    color: var(--text-2);
+    font-size: 0.82rem;
+}
+.market-status strong { color: var(--text); font-weight: 600; }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.65rem; }
+[data-testid="stSidebar"] hr { margin: 0.65rem 0 !important; }
+[data-testid="stSidebar"] h3 { font-size: 1.15rem !important; }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { margin-bottom: 0.25rem; }
+.stSelectbox label, .stMultiSelect label, .stTextInput label, .stNumberInput label {
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+.section-title {
+    font-family: var(--sans) !important;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.3rem !important;
+    padding-bottom: 0.6rem !important;
+}
+.section-title::after { display: none; }
+.price-card { animation: none; }
+.price-card:hover { transform: none; box-shadow: 0 0 0 0.5px var(--border); }
+.price-card::after { display: none; }
+.price-card.positive { border-top: 2px solid #24745D; }
+.price-card.negative { border-top: 2px solid #B53333; }
+.status-bullish { background: #EAF3EF; color: #24745D; }
+.research-note {
+    padding: 0.65rem 0;
+    color: var(--text-2);
+    font-size: 0.88rem;
+}
+.st-key-investment_memo [data-testid="stMarkdownContainer"] {
+    max-width: 76ch;
+    margin-inline: auto;
+    padding: 0.6rem 0.5rem 1.5rem;
+}
+.st-key-investment_memo [data-testid="stMarkdownContainer"] p,
+.st-key-investment_memo [data-testid="stMarkdownContainer"] li { line-height: 1.8; }
+.st-key-investment_memo [data-testid="stMarkdownContainer"] :is(h1,h2,h3,h4) {
+    font-family: var(--sans) !important;
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+    margin-top: 1.6rem;
+}
+.welcome-intro { text-align: left; padding: 1rem 0 1.25rem; }
+.welcome-card { border-top: 1px solid var(--border); box-shadow: none; }
+.welcome-card h4 { font-family: var(--sans) !important; font-weight: 600 !important; }
+button:focus-visible, a:focus-visible, input:focus-visible {
+    outline: 2px solid #356589 !important;
+    outline-offset: 3px;
+}
+@media (max-width: 760px) {
+    .brand-header { align-items: flex-start; flex-direction: column; gap: 0.5rem; }
+    .brand-badge { font-size: 0.75rem; }
+    .market-status { font-size: 0.76rem; gap: 0.35rem 0.75rem; }
+    .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .st-key-investment_memo [data-testid="stMarkdownContainer"] { padding-inline: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+}

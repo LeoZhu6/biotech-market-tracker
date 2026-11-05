@@ -1,7 +1,10 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(Path(__file__).with_name(".env"), override=True)
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+DEEPSEEK_MODEL = "deepseek-flash"
+DEEPSEEK_MODEL_LABEL = "DeepSeek-V4.1-Flash"
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -28,23 +31,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# ========== 恢复 Refresh 保存的状态 ==========
-if '_saved_tickers' in st.session_state:
-    # ✅ 使用 get() 方法避免 AttributeError
-    st.session_state.selected_tickers = st.session_state.get('_saved_tickers', [])
-    st.session_state.selected_time_range = st.session_state.get('_saved_time_range', '1y')
-    st.session_state.custom_tickers = st.session_state.get('_saved_custom', [])
-    st.session_state.preset_tickers = st.session_state.get('_saved_preset', [])
-    st.session_state.analysis_started = st.session_state.get('_saved_analysis_started', True)
-    st.session_state.is_refreshing = st.session_state.get('_saved_is_refreshing', True)
-    
-    # 清除临时变量
-    for key in ['_saved_tickers', '_saved_time_range', '_saved_custom', 
-                '_saved_preset', '_saved_analysis_started', '_saved_is_refreshing']:
-        if key in st.session_state:
-            del st.session_state[key]
-# =============================================
-
 # --- 初始化 Session State（新增）---
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
@@ -83,8 +69,8 @@ st.markdown("""
         --surface-2:    #F2EDE4;
         --surface-dark: #2E2820;
         --text:         #1A1512;
-        --text-2:       rgba(26,21,18,0.64);
-        --text-3:       rgba(26,21,18,0.42);
+        --text-2:       #59544E;
+        --text-3:       #716B63;
         --border:       rgba(26,21,18,0.12);
         --border-2:     rgba(26,21,18,0.22);
         --accent:       #C85D30;
@@ -111,16 +97,13 @@ st.markdown("""
     /* ---- Page background ---- */
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"], .main {
-        background:
-            radial-gradient(circle at 92% -8%, rgba(200,93,48,0.10) 0%, transparent 34rem),
-            radial-gradient(circle at 0% 24%, rgba(46,40,32,0.035) 0%, transparent 28rem),
-            var(--bg) !important;
+        background: var(--bg) !important;
         font-variant-numeric: tabular-nums;
     }
     [data-testid="stAppViewContainer"] > .block-container,
     .block-container {
         padding-top: 1.5rem !important;
-        animation: page-rise 0.75s var(--ease) both;
+        animation: none;
     }
 
     @keyframes page-rise {
@@ -430,7 +413,7 @@ st.markdown("""
     hr {
         border: none !important;
         border-top: 0.5px solid var(--border) !important;
-        margin: 1.8rem 0 !important;
+        margin: 1.1rem 0 !important;
     }
 
     /* =====================================================================
@@ -830,6 +813,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Workspace refinements are kept separate from the base Streamlit theme.
+st.markdown(
+    "<style>" + (Path(__file__).parent / "assets" / "workspace.css").read_text(encoding="utf-8") + "</style>",
+    unsafe_allow_html=True,
+)
+
 # --- 配置 ---
 BASE_URL = "https://api.deepseek.com"
 
@@ -853,7 +842,7 @@ def get_ai_response(messages, client):
     """调用 DeepSeek API 获取回答"""
     try:
         response = client.chat.completions.create(
-            model="deepseek-v4-pro",
+            model=DEEPSEEK_MODEL,
             messages=messages,
             temperature=0.7,
             max_tokens=2000
@@ -978,15 +967,11 @@ def add_chat_interface(selected_tickers, client):
             "question",
             placeholder="e.g., Which company has the strongest pipeline?",
             label_visibility="collapsed",
-            key=f"chat_text_input_{st.session_state.get('_chat_ver', 0)}"
+            key="chat_question"
         )
     with col_send:
-        send_btn = st.button("Send", type="primary", use_container_width=True, key="chat_send")
+        st.button("Send", type="primary", use_container_width=True, key="chat_send", on_click=queue_chat_question)
 
-    if send_btn and user_input:
-        st.session_state['_thinking_question'] = user_input
-        st.session_state['_chat_ver'] = st.session_state.get('_chat_ver', 0) + 1
-        st.rerun()
 # ==========================================
 TIME_RANGE_MAP = {
     "3mo": "Last 3 Months",
@@ -1016,6 +1001,47 @@ if 'custom_tickers' not in st.session_state:
     st.session_state.custom_tickers = []
 if 'preset_tickers' not in st.session_state:
     st.session_state.preset_tickers = []
+
+
+def clear_research():
+    """Invalidate all artifacts derived from the current analysis inputs."""
+    st.session_state.ai_report = ""
+    st.session_state.analysis_completed = False
+    st.session_state.analyzed_tickers = []
+    st.session_state.analysis_context = None
+    st.session_state.chat_history = []
+    st.session_state.pop('pdf_report', None)
+    st.session_state.pop('_thinking_question', None)
+    st.session_state['chat_question'] = ""
+
+
+def new_analysis():
+    clear_research()
+    st.session_state.analysis_started = False
+    st.session_state.is_refreshing = False
+
+
+def clear_selection():
+    new_analysis()
+    for key in ('custom_tickers', 'preset_tickers', 'selected_tickers', 'preset_select'):
+        st.session_state[key] = []
+    st.session_state.search_input = ""
+
+
+def load_favorites():
+    new_analysis()
+    st.session_state.custom_tickers = []
+    st.session_state.preset_select = list(st.session_state.favorite_tickers)
+    st.session_state.preset_tickers = list(st.session_state.favorite_tickers)
+    st.session_state.selected_tickers = list(st.session_state.favorite_tickers)
+    st.session_state.search_input = ""
+
+
+def queue_chat_question():
+    question = st.session_state.get('chat_question', '').strip()
+    if question:
+        st.session_state['_thinking_question'] = question
+        st.session_state['chat_question'] = ""
 
 
 # --- 工具函数 ---
@@ -1051,8 +1077,20 @@ def smart_search_ticker(query: str) -> List[Dict]:
     original_query = query.strip()
     query_lower = original_query.lower()
     
+    # Preset company names should remain searchable when remote providers fail.
+    local_matches = [
+        {'symbol': ticker, 'name': name, 'exchange': 'N/A', 'type': 'EQUITY'}
+        for ticker, name in TICKER_MAP.items()
+        if ticker != 'SPY' and query_lower in name.lower()
+    ]
+    if local_matches:
+        return local_matches[:8]
+
     # ========== 第一步：检测语言并转换 ==========
     search_queries = [original_query]  # 原始查询
+    # Resolve this common A-share alias to a remotely validated Yahoo symbol.
+    if original_query in ('\u6052\u745e', '\u6052\u745e\u533b\u836f') or query_lower in ('hengrui', 'hengruiyiyao'):
+        search_queries.insert(0, '600276.SS')
     
     # 如果包含中文，尝试翻译
     if any('\u4e00' <= char <= '\u9fff' for char in original_query):
@@ -1381,9 +1419,7 @@ def get_deepseek_analysis(metrics_df, period):
     if not api_key:
         return "Error: DEEPSEEK_API_KEY not found. Please check your .env file."
     
-    base_url = "https://api.deepseek.com"
-
-    client = OpenAI(api_key=api_key, base_url=base_url)
+    client = OpenAI(api_key=api_key, base_url=BASE_URL, timeout=60.0, max_retries=1)
     
     data_csv = metrics_df.to_csv(index=False)
     
@@ -1418,7 +1454,7 @@ def get_deepseek_analysis(metrics_df, period):
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-v4-pro",
+            model=DEEPSEEK_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -1492,7 +1528,7 @@ def create_pdf_report(metrics_df, ai_analysis, tickers, time_range):
     <b>Generated:</b> {current_time_str}<br/>
     <b>Period:</b> {TIME_RANGE_MAP.get(time_range, time_range)}<br/>
     <b>Tickers:</b> {', '.join(tickers)}<br/>
-    <b>Analyst:</b> DeepSeek-V4 AI
+    <b>Analyst:</b> {DEEPSEEK_MODEL_LABEL} AI
     """
     story.append(Paragraph(report_info, styles['Normal']))
     story.append(Spacer(1, 0.3*inch))
@@ -1609,9 +1645,11 @@ current_date = now.strftime("%b %d, %Y")
 
 st.markdown(f"""
 <div class="brand-header">
-    <p class="brand-title">BioMarket Tracker</p>
-    <p class="brand-sub">Professional Biotech Market Intelligence Platform</p>
-    <span class="brand-badge">⬡ DeepSeek-V4 · Yahoo Finance</span>
+    <div class="brand-copy">
+        <p class="brand-title">BioMarket Tracker</p>
+        <p class="brand-sub">Biotech equities, performance & research</p>
+    </div>
+    <span class="brand-badge">Market data by Yahoo Finance</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1620,38 +1658,26 @@ col_status, col_refresh, col_new = st.columns([2.5, 1, 1], gap="small")
 
 with col_status:
     st.markdown(
-        f'<div style="padding:9px 16px;background:#FFFDF8;border-radius:4px;'
-        f'box-shadow:0 0 0 0.5px rgba(26,21,18,0.12);font-family:Inter,system-ui,sans-serif;'
-        f'font-size:0.86rem;color:#4d4c48;display:flex;align-items:center;gap:10px;">'
-        f'<span><span style="{market_dot_style}"></span>'
-        f'<b style="color:#1A1512;">{market_status}</b></span>'
-        f'<span style="color:rgba(26,21,18,0.22);">|</span>'
-        f'<span style="color:rgba(26,21,18,0.42);">Updated <b style="color:#1A1512;">{current_time}</b></span>'
-        f'<span style="color:rgba(26,21,18,0.22);">|</span>'
-        f'<span style="color:rgba(26,21,18,0.42);">{current_date}</span>'
+        f'<div class="market-status">'
+        f'<strong>Research workspace</strong>'
+        f'<span>Page refreshed {current_time} · {current_date}</span>'
         f'</div>',
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
+def refresh_analysis():
+    clear_research()
+    st.session_state.analysis_started = True
+    st.session_state.is_refreshing = True
+    get_data.clear()
+
+
 with col_refresh:
-    if st.button("Refresh", use_container_width=True, key="refresh_btn"):
-        st.session_state.analysis_started = True
-        st.session_state.is_refreshing = True
-        st.session_state._saved_tickers = st.session_state.selected_tickers.copy()
-        st.session_state._saved_time_range = st.session_state.selected_time_range
-        st.session_state._saved_custom = st.session_state.custom_tickers.copy()
-        st.session_state._saved_preset = st.session_state.preset_tickers.copy()
-        get_data.clear()
-        st.session_state.last_update = datetime.now()
-        st.rerun()
+    st.button("Refresh", use_container_width=True, key="refresh_btn",
+              disabled=not st.session_state.selected_tickers, on_click=refresh_analysis)
 
 with col_new:
-    if st.button("New Analysis", use_container_width=True):
-        st.session_state.analysis_completed = False
-        st.session_state.analyzed_tickers = []
-        st.session_state.chat_history = []
-        st.cache_data.clear()
-        st.rerun()
+    st.button("New Analysis", use_container_width=True, on_click=new_analysis)
 
 # ==================== 侧边栏 ====================
 with st.sidebar:
@@ -1704,7 +1730,6 @@ with st.sidebar:
         preset_tickers = st.multiselect(
             "Quick select",
             options=available_tickers,
-            default=[], 
             format_func=lambda x: TICKER_MAP.get(x, x),
             placeholder="Choose from list...",
             label_visibility="collapsed",
@@ -1713,17 +1738,36 @@ with st.sidebar:
         
         st.session_state.preset_tickers = preset_tickers
         
-        if not st.session_state.get('is_refreshing', False):
-           all_tickers = list(set(st.session_state.custom_tickers + st.session_state.preset_tickers))
-           st.session_state.selected_tickers = all_tickers
-        else:
-           # 刷新时使用已保存的 tickers
-           all_tickers = st.session_state.get('selected_tickers', [])
+        all_tickers = list(dict.fromkeys(st.session_state.custom_tickers + preset_tickers))
+        st.session_state.selected_tickers = all_tickers
+
+        st.markdown("---")
+
+        st.markdown("**Time Period**")
+        time_range = st.selectbox(
+            "Analysis period",
+            ["3mo", "6mo", "1y", "3y", "5y"],
+            format_func=lambda x: TIME_RANGE_MAP.get(x, x),
+            index=2,
+            label_visibility="collapsed",
+            key="analysis_period",
+        )
+        st.session_state.selected_time_range = time_range
+        signature = (tuple(all_tickers), time_range)
+        if st.session_state.get('_research_signature') != signature:
+            clear_research()
+            st.session_state['_research_signature'] = signature
+
+        if all_tickers and not st.session_state.analysis_started:
+            if st.button("Start Analysis", type="primary", use_container_width=True, key="sidebar_start_analysis"):
+                st.session_state.analysis_started = True
+                st.rerun()
+
         
         if all_tickers:
             st.markdown("---")
             st.markdown("**Current Selection**")
-            st.info(f"Total: **{len(all_tickers)}** stocks")
+            st.caption(f"{len(all_tickers)} stocks selected")
             
             if st.session_state.custom_tickers:
                 st.caption("Custom:")
@@ -1739,23 +1783,7 @@ with st.sidebar:
                 st.session_state.favorite_tickers = all_tickers
                 st.success("Saved!")
             
-            if st.button("Clear All", use_container_width=True):
-                st.session_state.custom_tickers = []
-                st.session_state.preset_tickers = []
-                st.session_state.selected_tickers = []
-                st.rerun()
-        
-        st.markdown("---")
-        
-        st.markdown("**Time Period**")
-        time_range = st.selectbox(
-            "Analysis period",
-            ["3mo", "6mo", "1y", "3y", "5y"],
-            format_func=lambda x: TIME_RANGE_MAP.get(x, x),
-            index=2,
-            label_visibility="collapsed"
-        )
-        st.session_state.selected_time_range = time_range
+            st.button("Clear All", use_container_width=True, on_click=clear_selection)
     
     with tab2:
         st.markdown("**Price Alerts**")
@@ -1806,10 +1834,7 @@ with st.sidebar:
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Load Favorites", use_container_width=True):
-                    st.session_state.preset_tickers = st.session_state.favorite_tickers
-                    st.success("Loaded! Check Selection tab")
-                    st.rerun()
+                st.button("Load Favorites", use_container_width=True, on_click=load_favorites)
             with col2:
                 if st.button("Clear", use_container_width=True):
                     st.session_state.favorite_tickers = []
@@ -1820,7 +1845,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.caption("Data: Yahoo Finance")
-    st.caption("AI: DeepSeek-V4")
+    st.caption(f"AI: {DEEPSEEK_MODEL_LABEL}")
     st.caption("Dev: Runze Zhu")
 
 
@@ -1855,7 +1880,7 @@ if should_show_analysis:
                 col_a, col_b, col_c = st.columns([1,1,1])
                 with col_b:
                     if st.button("Retry", type="primary", use_container_width=True):
-                        st.session_state.analysis_started = False
+                        st.session_state.analysis_started = True
                         get_data.clear()
                         st.rerun()
             elif not prices.empty:
@@ -1936,15 +1961,15 @@ if should_show_analysis:
                         price_change = ((prices[ticker].iloc[-1] / prices[ticker].iloc[0]) - 1) * 100
                         
                         with cols[idx % 4]:
-                            change_color = "#4caf50" if price_change >= 0 else "#f44336"
+                            change_color = "#24745D" if price_change >= 0 else "#B53333"
                             arrow = "↑" if price_change >= 0 else "↓"
                             card_class = "positive" if price_change >= 0 else "negative"
                             
                             st.markdown(f"""
                             <div class="price-card {card_class}">
                                 <div class="card-ticker">{TICKER_MAP.get(ticker, ticker)}</div>
-                                <div class="card-price" style="color: {change_color};">${current_price:.2f}</div>
-                                <div class="card-change" style="color: {change_color};">{arrow} {abs(price_change):.2f}%</div>
+                                <div class="card-price">${current_price:.2f}</div>
+                                <div class="card-change" style="color: {change_color};">{arrow} {abs(price_change):.2f}% over selected period</div>
                             </div>
                             """, unsafe_allow_html=True)
                 
@@ -1961,7 +1986,8 @@ if should_show_analysis:
                     normalized_plot, 
                     x=normalized_plot.index, 
                     y=normalized_plot.columns,
-                    labels={'value': 'Indexed Price', 'variable': 'Ticker', 'Date': 'Date'}
+                    labels={'value': 'Indexed Price', 'variable': 'Ticker', 'Date': 'Date'},
+                    color_discrete_sequence=['#356589', '#C85D30', '#24745D', '#80689B', '#9A7641', '#477E85']
                 )
                 
                 spy_full_name = TICKER_MAP['SPY']
@@ -1977,16 +2003,16 @@ if should_show_analysis:
                     hovermode='x unified',
                     plot_bgcolor='#FFFDF8',
                     paper_bgcolor='#FFFDF8',
-                    font=dict(family="Inter, system-ui, sans-serif", size=11, color='rgba(26,21,18,0.42)'),
+                    font=dict(family="Inter, system-ui, sans-serif", size=12, color="#59544E"),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                                 font=dict(size=10)),
                     height=450,
                     margin=dict(t=30, b=40, l=50, r=20),
                 )
-                fig_perf.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                fig_perf.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=11))
                 fig_perf.update_yaxes(showgrid=True, gridcolor='#F2EDE4', gridwidth=0.5,
                                       zeroline=True, zerolinecolor='rgba(26,21,18,0.22)', zerolinewidth=1,
-                                      tickfont=dict(size=10))
+                                      tickfont=dict(size=11))
                 
                 st.plotly_chart(fig_perf, use_container_width=True)
                 
@@ -2018,28 +2044,28 @@ if should_show_analysis:
                             line=dict(color='#C85D30', width=2.2)
                         ))
                         fig_rsi.add_hrect(y0=70, y1=100, fillcolor="#b53333", opacity=0.06, line_width=0)
-                        fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#C85D30", opacity=0.06, line_width=0)
+                        fig_rsi.add_hrect(y0=0, y1=30, fillcolor="#356589", opacity=0.06, line_width=0)
                         fig_rsi.add_hline(y=70, line_dash="dot", line_color="#b53333", line_width=1.2,
                                           annotation_text="Overbought", annotation_font_color="#b53333",
                                           annotation_font_size=10)
-                        fig_rsi.add_hline(y=30, line_dash="dot", line_color="#C85D30", line_width=1.2,
-                                          annotation_text="Oversold", annotation_font_color="#C85D30",
+                        fig_rsi.add_hline(y=30, line_dash="dot", line_color="#356589", line_width=1.2,
+                                          annotation_text="Oversold", annotation_font_color="#356589",
                                           annotation_font_size=10)
                         fig_rsi.update_layout(
                             title=dict(text=f"RSI — {TICKER_MAP.get(tech_ticker, tech_ticker)}",
-                                       font=dict(family="Playfair Display, Georgia, serif", size=15, color="#1A1512")),
+                                       font=dict(family="Inter, system-ui, sans-serif", size=15, color="#1A1512")),
                             yaxis_title="RSI",
                             height=320,
                             hovermode='x',
                             plot_bgcolor='#FFFDF8',
                             paper_bgcolor='#FFFDF8',
-                            font=dict(family="Inter, system-ui, sans-serif", size=11, color='rgba(26,21,18,0.42)'),
+                            font=dict(family="Inter, system-ui, sans-serif", size=12, color="#59544E"),
                             showlegend=False,
                             margin=dict(t=45, b=30, l=45, r=20),
                         )
-                        fig_rsi.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                        fig_rsi.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=11))
                         fig_rsi.update_yaxes(showgrid=True, gridcolor='#F2EDE4', gridwidth=0.5,
-                                             zeroline=False, tickfont=dict(size=10))
+                                             zeroline=False, tickfont=dict(size=11))
                         st.plotly_chart(fig_rsi, use_container_width=True)
                         
                         current_rsi = rsi.iloc[-1]
@@ -2063,10 +2089,10 @@ if should_show_analysis:
                         fig_macd.add_trace(go.Scatter(
                             x=signal.index, y=signal,
                             name='Signal',
-                            line=dict(color='#b53333', width=1.8, dash='dash')
+                            line=dict(color='#356589', width=1.8, dash='dash')
                         ))
-                        # histogram: positive terracotta, negative red
-                        hist_colors = ['#C85D30' if v >= 0 else '#b53333' for v in histogram]
+                        # Histogram uses directional colors independently of the indicator lines.
+                        hist_colors = ['#24745D' if v >= 0 else '#b53333' for v in histogram]
                         fig_macd.add_trace(go.Bar(
                             x=histogram.index, y=histogram,
                             name='Histogram',
@@ -2075,22 +2101,22 @@ if should_show_analysis:
                         ))
                         fig_macd.update_layout(
                             title=dict(text=f"MACD — {TICKER_MAP.get(tech_ticker, tech_ticker)}",
-                                       font=dict(family="Playfair Display, Georgia, serif", size=15, color="#1A1512")),
+                                       font=dict(family="Inter, system-ui, sans-serif", size=15, color="#1A1512")),
                             yaxis_title="Value",
                             height=320,
                             hovermode='x',
                             plot_bgcolor='#FFFDF8',
                             paper_bgcolor='#FFFDF8',
-                            font=dict(family="Inter, system-ui, sans-serif", size=11, color='rgba(26,21,18,0.42)'),
+                            font=dict(family="Inter, system-ui, sans-serif", size=12, color="#59544E"),
                             showlegend=True,
                             legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5,
                                         font=dict(size=10)),
                             margin=dict(t=45, b=40, l=45, r=20),
                         )
-                        fig_macd.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                        fig_macd.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=11))
                         fig_macd.update_yaxes(showgrid=True, gridcolor='#F2EDE4', gridwidth=0.5,
                                               zeroline=True, zerolinecolor='rgba(26,21,18,0.22)', zerolinewidth=1,
-                                              tickfont=dict(size=10))
+                                              tickfont=dict(size=11))
                         st.plotly_chart(fig_macd, use_container_width=True)
                         
                         if macd.iloc[-1] > signal.iloc[-1]:
@@ -2110,7 +2136,7 @@ if should_show_analysis:
                     fig_bb.add_trace(go.Scatter(
                         x=lower_bb.index, y=lower_bb,
                         name='Lower Band',
-                        line=dict(color='#C85D30', width=0.8, dash='dot'),
+                        line=dict(color='#356589', width=0.8, dash='dot'),
                         fill='tonexty',
                         fillcolor='rgba(200,93,48,0.055)'
                     ))
@@ -2126,20 +2152,20 @@ if should_show_analysis:
                     ))
                     fig_bb.update_layout(
                         title=dict(text=f"Bollinger Bands — {TICKER_MAP.get(tech_ticker, tech_ticker)}",
-                                   font=dict(family="Playfair Display, Georgia, serif", size=15, color="#1A1512")),
+                                   font=dict(family="Inter, system-ui, sans-serif", size=15, color="#1A1512")),
                         yaxis_title="Price ($)",
                         height=380,
                         hovermode='x unified',
                         plot_bgcolor='#FFFDF8',
                         paper_bgcolor='#FFFDF8',
-                        font=dict(family="Inter, system-ui, sans-serif", size=11, color='rgba(26,21,18,0.42)'),
+                        font=dict(family="Inter, system-ui, sans-serif", size=12, color="#59544E"),
                         legend=dict(orientation="h", yanchor="top", y=-0.14, xanchor="center", x=0.5,
                                     font=dict(size=10)),
                         margin=dict(t=45, b=45, l=55, r=20),
                     )
-                    fig_bb.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=10))
+                    fig_bb.update_xaxes(showgrid=False, showline=False, tickfont=dict(size=11))
                     fig_bb.update_yaxes(showgrid=True, gridcolor='#F2EDE4', gridwidth=0.5,
-                                        zeroline=False, tickfont=dict(size=10),
+                                        zeroline=False, tickfont=dict(size=11),
                                         tickprefix="$")
                     st.plotly_chart(fig_bb, use_container_width=True)
                 
@@ -2213,21 +2239,21 @@ if should_show_analysis:
                         hovermode='closest',
                         plot_bgcolor='#FFFDF8',
                         paper_bgcolor='#FFFDF8',
-                        font=dict(family="Inter, system-ui, sans-serif", size=11, color='rgba(26,21,18,0.42)'),
+                        font=dict(family="Inter, system-ui, sans-serif", size=12, color="#59544E"),
                         showlegend=True,
                         margin=dict(t=40, b=50, l=55, r=20),
                         coloraxis_colorbar=dict(
                             title="Beta",
-                            tickfont=dict(size=10),
+                            tickfont=dict(size=11),
                             title_font=dict(size=11),
                             len=0.7,
                         )
                     )
                     fig_scat.update_xaxes(showgrid=True, gridcolor='#F2EDE4', gridwidth=0.5,
-                                          zeroline=False, tickfont=dict(size=10))
+                                          zeroline=False, tickfont=dict(size=11))
                     fig_scat.update_yaxes(showgrid=True, gridcolor='#F2EDE4', gridwidth=0.5,
                                           zeroline=True, zerolinecolor='rgba(26,21,18,0.22)', zerolinewidth=1,
-                                          tickfont=dict(size=10))
+                                          tickfont=dict(size=11))
                     st.plotly_chart(fig_scat, use_container_width=True)
                 
                 with col2:
@@ -2254,7 +2280,7 @@ if should_show_analysis:
                 col1, col2 = st.columns([3, 1])
                 
                 with col1:
-                    st.info("Generate professional investment memo based on current market data")
+                    st.markdown('<div class="research-note">Turn this analysis into an investment memo, then ask follow-up questions.</div>', unsafe_allow_html=True)
                 
                 with col2:
                     generate_btn = st.button("Generate Report", type="primary", use_container_width=True)
@@ -2291,7 +2317,8 @@ if should_show_analysis:
                     st.markdown("---")
 
                     with st.expander("Investment Memo", expanded=True):
-                        st.markdown(st.session_state.ai_report)
+                        with st.container(key="investment_memo"):
+                            st.markdown(st.session_state.ai_report)
                     
                     st.markdown('<div class="section-title">Export Options</div>', unsafe_allow_html=True)
                     
@@ -2310,14 +2337,17 @@ if should_show_analysis:
                                     time_range
                                 )
                                 
-                                st.download_button(
-                                    label="Download PDF",
-                                    data=pdf_buffer,
-                                    file_name=f"BioMarket_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True
-                                )
+                                st.session_state.pdf_report = pdf_buffer.getvalue()
                                 st.success("PDF ready!")
+                        if st.session_state.get('pdf_report'):
+                            st.download_button(
+                                label="Download PDF",
+                                data=st.session_state.pdf_report,
+                                file_name=f"BioMarket_Report_{datetime.now().strftime('%Y%m%d')}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True,
+                                on_click="ignore",
+                            )
                     
                     with col3:
                         csv = metrics_df.to_csv(index=False, encoding='utf-8-sig')
@@ -2352,11 +2382,7 @@ elif len(st.session_state.selected_tickers) > 0 and not st.session_state.analysi
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("Start Analysis", type="primary", use_container_width=True, key="start_analysis"):
-            st.session_state.analysis_started = True
-            st.rerun()
+    st.caption("Use Start Analysis in the sidebar to run this configuration.")
 
 
 else:
@@ -2364,10 +2390,10 @@ else:
 
     # ---- Welcome 标题 ----
     st.markdown("""
-    <div style="text-align:center;padding:1.5rem 0 1rem;">
-        <p class="welcome-heading">Welcome to BioMarket Tracker</p>
+    <div class="welcome-intro">
+        <p class="welcome-heading">Build your biotech view</p>
         <p class="welcome-sub">
-            Select stocks from the sidebar to begin your analysis
+            Choose companies and a time period in the sidebar to compare performance, risk and technical signals.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -2378,7 +2404,6 @@ else:
     with wc1:
         st.markdown("""
         <div class="welcome-card welcome-card-accent">
-            <p style="font-size:1.5rem;margin:0 0 0.5rem;">🧬</p>
             <h4>Getting Started</h4>
             <ol style="padding-left:1.1rem;margin:0;font-size:0.82rem;line-height:1.7;">
                 <li>Open the sidebar on the left</li>
@@ -2393,7 +2418,6 @@ else:
     with wc2:
         st.markdown("""
         <div class="welcome-card welcome-card-gold">
-            <p style="font-size:1.5rem;margin:0 0 0.5rem;">📊</p>
             <h4>Analytics Suite</h4>
             <ul style="padding-left:1.1rem;margin:0;font-size:0.82rem;line-height:1.7;">
                 <li>Normalized price performance chart</li>
@@ -2408,10 +2432,9 @@ else:
     with wc3:
         st.markdown("""
         <div class="welcome-card welcome-card-blue">
-            <p style="font-size:1.5rem;margin:0 0 0.5rem;">🤖</p>
             <h4>AI Investment Analyst</h4>
             <p style="font-size:0.82rem;line-height:1.6;margin:0;">
-                Powered by <b style="color:#1A1512;">DeepSeek-V4</b>. After running analysis,
+                Powered by <b style="color:#1A1512;">DeepSeek-V4.1-Flash</b>. After running analysis,
                 generate a professional investment memo — sector overview, key findings,
                 risk-adjusted rankings — then ask follow-up questions on pipeline, valuation,
                 and macro catalysts. Export to PDF.
@@ -2435,7 +2458,7 @@ if st.session_state.get('analysis_completed', False):
         analyzed_tickers = st.session_state.get('analyzed_tickers', [])
         
         if analyzed_tickers and len(analyzed_tickers) > 0:
-            chat_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL)
+            chat_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=BASE_URL, timeout=60.0, max_retries=1)
             add_chat_interface(analyzed_tickers, chat_client)
                         
     except Exception as e:
