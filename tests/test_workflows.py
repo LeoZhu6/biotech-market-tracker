@@ -152,6 +152,27 @@ class Workflows(unittest.TestCase):
         for call in self.completions.create.call_args_list:
             self.assertEqual(call.kwargs["model"], "deepseek-flash")
 
+    def test_chat_controls_are_complete_during_ai_request(self):
+        self.report()
+        observed = []
+        original = self.completions.create.side_effect
+        import streamlit as st
+        rendered = set()
+        original_button = st.button
+        def button(*args, **kwargs):
+            rendered.add(kwargs.get("key"))
+            return original_button(*args, **kwargs)
+        def respond(**kwargs):
+            if not kwargs.get("stream"):
+                observed.append(all(f"quick_q_{i}" in rendered for i in range(4)))
+            return original(**kwargs)
+        self.completions.create.side_effect = respond
+        with patch("streamlit.button", side_effect=button):
+            self.a.button(key="quick_q_0").click().run(timeout=30)
+        self.healthy()
+        self.assertEqual(observed, [True])
+        self.assertEqual(len([b for b in self.a.button if b.key and b.key.startswith("quick_q_")]), 4)
+
     def test_pdf_download_survives_rerun_and_csv_exists(self):
         self.report()
         self.click("Generate PDF")

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from html import escape
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).with_name(".env"), override=True)
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
@@ -925,15 +926,8 @@ Be professional, objective, and insightful."""
 def add_chat_interface(selected_tickers, client):
     """添加对话界面"""
 
-    # ── 思考模式：只渲染 spinner，return 掉所有下方内容，彻底消除残影
-    if st.session_state.get('_thinking_question'):
-        question = st.session_state.pop('_thinking_question')
-        with st.spinner("🤖 AI is thinking..."):
-            handle_user_question(question, selected_tickers, client)
-        st.rerun()
-        return
-
-    # ── 快捷按钮（点击后存 session_state + rerun，不在当前轮渲染 spinner 以下内容）
+    # Keep the entire widget tree stable while a slow AI request is running.
+    pending_question = st.session_state.get('_thinking_question')
     st.markdown("**🚀 Quick Questions:**")
     quick_questions = {
         "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
@@ -944,12 +938,15 @@ def add_chat_interface(selected_tickers, client):
     col1, col2, col3, col4 = st.columns(4)
     for idx, (btn_text, question) in enumerate(quick_questions.items()):
         with [col1, col2, col3, col4][idx]:
-            if st.button(btn_text, key=f"quick_q_{idx}", use_container_width=True):
-                st.session_state['_thinking_question'] = question
-                st.rerun()
+            st.button(
+                btn_text, key=f"quick_q_{idx}", use_container_width=True,
+                on_click=queue_quick_question, args=(question,),
+            )
 
     # ── 对话历史
-    display_chat_history()
+    history_slot = st.empty()
+    with history_slot.container():
+        display_chat_history()
 
     # ── 清空历史
     if st.session_state.chat_history:
@@ -967,10 +964,20 @@ def add_chat_interface(selected_tickers, client):
             "question",
             placeholder="e.g., Which company has the strongest pipeline?",
             label_visibility="collapsed",
-            key="chat_question"
+            key="chat_question",
         )
     with col_send:
         st.button("Send", type="primary", use_container_width=True, key="chat_send", on_click=queue_chat_question)
+
+    # Start processing only after all controls have been emitted. Never rerun
+    # halfway through a row of buttons, which leaves stale rows on the client.
+    with st.container(key="chat_request_status"):
+        if pending_question:
+            question = st.session_state.pop('_thinking_question')
+            with st.spinner("AI is thinking..."):
+                handle_user_question(question, selected_tickers, client)
+            with history_slot.container():
+                display_chat_history()
 
 # ==========================================
 TIME_RANGE_MAP = {
@@ -1035,6 +1042,14 @@ def load_favorites():
     st.session_state.preset_tickers = list(st.session_state.favorite_tickers)
     st.session_state.selected_tickers = list(st.session_state.favorite_tickers)
     st.session_state.search_input = ""
+
+
+def queue_quick_question(question):
+    st.session_state['_thinking_question'] = question
+
+
+def sidebar_notice(message):
+    st.markdown(f'<div class="sidebar-notice" role="status">{escape(message)}</div>', unsafe_allow_html=True)
 
 
 def queue_chat_question():
@@ -1771,13 +1786,13 @@ with st.sidebar:
             
             if st.session_state.custom_tickers:
                 st.caption("Custom:")
-                for ticker in st.session_state.custom_tickers:
-                    st.markdown(f'<span class="ticker-tag custom">{ticker}</span>', unsafe_allow_html=True)
+                tags = ''.join(f'<span class="ticker-tag custom">{escape(ticker)}</span>' for ticker in st.session_state.custom_tickers)
+                st.markdown(f'<div class="ticker-list">{tags}</div>', unsafe_allow_html=True)
             
             if st.session_state.preset_tickers:
                 st.caption("Preset:")
-                for ticker in st.session_state.preset_tickers:
-                    st.markdown(f'<span class="ticker-tag">{ticker}</span>', unsafe_allow_html=True)
+                tags = ''.join(f'<span class="ticker-tag">{escape(ticker)}</span>' for ticker in st.session_state.preset_tickers)
+                st.markdown(f'<div class="ticker-list">{tags}</div>', unsafe_allow_html=True)
             
             if st.button("Save to Favorites", use_container_width=True):
                 st.session_state.favorite_tickers = all_tickers
@@ -1806,7 +1821,7 @@ with st.sidebar:
                     'created': datetime.now().strftime('%Y-%m-%d %H:%M')
                 }
                 st.session_state.price_alerts.append(alert)
-                st.success(f"Alert set for {alert_ticker}")
+                sidebar_notice(f"Alert set for {alert_ticker}")
             
             if st.session_state.price_alerts:
                 st.markdown("---")
@@ -1821,13 +1836,13 @@ with st.sidebar:
                                 st.session_state.price_alerts.pop(idx)
                                 st.rerun()
         else:
-            st.info("Select stocks first")
+            sidebar_notice("Select stocks to set a price alert.")
     
     with tab3:
         st.markdown("**Saved Lists**")
         
         if st.session_state.favorite_tickers:
-            st.success(f"{len(st.session_state.favorite_tickers)} stocks saved")
+            sidebar_notice(f"{len(st.session_state.favorite_tickers)} stocks saved")
             
             for ticker in st.session_state.favorite_tickers:
                 st.caption(f"• {TICKER_MAP.get(ticker, ticker)}")
@@ -1838,10 +1853,10 @@ with st.sidebar:
             with col2:
                 if st.button("Clear", use_container_width=True):
                     st.session_state.favorite_tickers = []
-                    st.success("Cleared")
+                    sidebar_notice("Favorites cleared")
                     st.rerun()
         else:
-            st.info("No favorites saved")
+            sidebar_notice("No favorites saved")
     
     st.markdown("---")
     st.caption("Data: Yahoo Finance")

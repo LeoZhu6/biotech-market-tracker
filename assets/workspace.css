@@ -33,6 +33,24 @@
     font-size: 0.82rem;
 }
 .market-status strong { color: var(--text); font-weight: 600; }
+.ticker-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.15rem 0 0.75rem;
+    min-height: 2.5rem;
+}
+.ticker-list .ticker-tag { margin: 0; line-height: 1.5; }
+.sidebar-notice {
+    background: #EDE6DB;
+    color: #63503A;
+    border: 1px solid #D8CBB8;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.65rem; }
 [data-testid="stSidebar"] hr { margin: 0.65rem 0 !important; }
 [data-testid="stSidebar"] h3 { font-size: 1.15rem !important; }
