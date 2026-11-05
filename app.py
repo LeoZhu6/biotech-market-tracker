@@ -28,7 +28,6 @@ import re
 # --- 页面配置 ---
 st.set_page_config(
     page_title="BioMarket Tracker",
-    page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -854,7 +853,7 @@ def get_ai_response(messages, client):
             return "The AI returned no answer. Please try again or ask a shorter question."
         return answer
     except Exception as e:
-        return f"❌ 获取回答时出错: {str(e)}"
+        return f" 获取回答时出错: {str(e)}"
 
 def display_chat_history():
     """Render answers as Markdown instead of interpolating model text into HTML."""
@@ -862,7 +861,7 @@ def display_chat_history():
         st.markdown("### Chat History")
         for msg in st.session_state.chat_history:
             role = "user" if msg['role'] == 'user' else "assistant"
-            with st.chat_message(role):
+            with st.chat_message(role, avatar=":material/person:" if role == "user" else ":material/smart_toy:"):
                 st.markdown(msg.get('content') or "No answer received. Please try again.")
 
 
@@ -886,7 +885,7 @@ def handle_user_question(question, selected_tickers, client):
             "content": f"""You are a professional biotech investment analyst.
 Currently analyzing: {', '.join(selected_tickers)}
 Please answer based on the previous analysis and latest data.
-Be professional, objective, and insightful."""
+Be professional, objective, and insightful. Do not use emoji."""
         }
     ]
     
@@ -920,12 +919,12 @@ def add_chat_interface(selected_tickers, client):
 
     # Keep the entire widget tree stable while a slow AI request is running.
     pending_question = st.session_state.get('_thinking_question')
-    st.markdown("**🚀 Quick Questions:**")
+    st.markdown("**Quick Questions:**")
     quick_questions = {
-        "📊 Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
-        "🔬 R&D Pipeline":      f"Evaluate the R&D pipeline and clinical trials of {', '.join(selected_tickers)}.",
-        "⚠️ Investment Risks":  f"What are the main investment risks for {', '.join(selected_tickers)}?",
-        "📈 Future Trends":     f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
+        "Financial Metrics": f"Analyze key financial metrics of {', '.join(selected_tickers)} in detail.",
+        "R&D Pipeline":      f"Evaluate the R&D pipeline and clinical trials of {', '.join(selected_tickers)}.",
+        "Investment Risks":  f"What are the main investment risks for {', '.join(selected_tickers)}?",
+        "Future Trends":     f"Predict market trends for {', '.join(selected_tickers)} in next 6-12 months."
     }
     col1, col2, col3, col4 = st.columns(4)
     for idx, (btn_text, question) in enumerate(quick_questions.items()):
@@ -1438,7 +1437,7 @@ def get_deepseek_analysis(metrics_df, period):
     You are a senior biotech equity analyst at a top-tier investment bank.
     Today's Date: {current_date}
     
-    Generate a professional investment memo in ENGLISH.
+    Generate a professional investment memo in ENGLISH. Do not use emoji.
     
     Structure:
     
@@ -2319,7 +2318,7 @@ if should_show_analysis:
                             st.session_state.analysis_completed = True
                             st.session_state.analyzed_tickers = tickers.copy()
                             st.session_state.analysis_context = full_response
-                            status.update(label="✅ Analysis completed!", state="complete")
+                            status.update(label="Analysis completed!", state="complete")
                 
                 if st.session_state.ai_report:
                     st.markdown("---")
@@ -2460,7 +2459,7 @@ else:
 # ========== AI 对话功能（只在分析完成后显示）==========
 # 只有在分析完成后才显示对话界面
 if st.session_state.get('analysis_completed', False):
-    st.markdown('<div class="section-title">💬 Continue Discussion with AI Analyst</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Continue Discussion with AI Analyst</div>', unsafe_allow_html=True)
     
     try:
         analyzed_tickers = st.session_state.get('analyzed_tickers', [])
